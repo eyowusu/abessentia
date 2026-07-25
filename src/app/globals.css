@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+:root {
+  /* Core palette — warm, premium, Figma-grade */
+  --background: #FAF7F2;
+  --foreground: #1C1917;
+  --surface: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --muted: #F2EBE2;
+  --border: #E8E0D5;
+  --ring: #C88A2C;
+
+  /* Brand accents */
+  --primary: #C88A2C;
+  --primary-light: #E5B25A;
+  --primary-dark: #A06B1A;
+  --secondary: #1F5E43;
+  --secondary-light: #2D7A5A;
+  --secondary-dark: #164B32;
+  --accent: #D97706;
+
+  /* Legacy brand variables remapped */
+  --brand-white: #FFFFFF;
+  --brand-black: #0F0D0B;
+  --brand-gold: #C88A2C;
+  --brand-green: #1F5E43;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
+  --color-secondary-dark: var(--secondary-dark);
+  --color-accent: var(--accent);
+
+  --color-brand-white: var(--brand-white);
+  --color-brand-black: var(--brand-black);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-green: var(--brand-green);
+
+  /* Warm, cohesive neutral scale */
+  --color-white: #FFFFFF;
+  --color-black: #0F0D0B;
+  --color-gray-50: #FAF7F2;
+  --color-gray-100: #F2EBE2;
+  --color-gray-200: #E8E0D5;
+  --color-gray-300: #D6CBBF;
+  --color-gray-400: #A89F91;
+  --color-gray-500: #6B5E51;
+  --color-gray-600: #4A3F36;
+  --color-gray-700: #2B2118;
+  --color-gray-800: #1C1917;
+  --color-gray-900: #0F0D0B;
+  --color-gray-950: #080706;
+
+  /* Typography */
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+  --font-heading: var(--font-playfair);
+
+  /* Refined shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(15 13 11 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(15 13 11 / 0.06), 0 2px 4px -2px rgb(15 13 11 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(15 13 11 / 0.07), 0 4px 6px -4px rgb(15 13 11 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(15 13 11 / 0.08), 0 8px 10px -6px rgb(15 13 11 / 0.05);
+  --shadow-2xl: 0 25px 50px -12px rgb(15 13 11 / 0.12);
+  --shadow-glow: 0 0 40px -10px rgb(200 138 44 / 0.25);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-playfair), ui-serif, Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+  }
+
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
