@@ -419,7 +419,7 @@ export default function ProductsPage() {
                     </h3>
 
                     {product.sku && (
-                      <p className="text-xs text-gray-500 mb-2">SKU: {product.sku}</p>
+                      <p className="text-xs font-bold text-gray-500 mb-2">SKU: {product.sku}</p>
                     )}
 
                     {product.description && (

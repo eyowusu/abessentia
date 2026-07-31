@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
               </h1>
 
               {product.sku && (
-                <p className="text-sm text-gray-500 mb-4">SKU: {product.sku}</p>
+                <p className="text-sm font-bold text-gray-500 mb-4">SKU: {product.sku}</p>
               )}
 
               {product.rating && (
