@@ -17,6 +17,7 @@ interface Product {
   category?: string;
   rating?: number;
   stock?: number;
+  sku?: string;
   [key: string]: unknown;
 }
 
@@ -416,6 +417,10 @@ export default function ProductsPage() {
                     <h3 className="font-bold text-lg text-foreground font-serif mb-1 line-clamp-2 group-hover:text-primary transition-colors">
                       {product.name}
                     </h3>
+
+                    {product.sku && (
+                      <p className="text-xs text-gray-500 mb-2">SKU: {product.sku}</p>
+                    )}
 
                     {product.description && (
                       <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>

@@ -23,6 +23,7 @@ const normalizeProduct = (product: unknown) => {
     rating: asNumber(p?.rating),
     isAvailable: Boolean(p?.is_available ?? true),
     createdAt: asString(p?.created_at),
+    sku: asString(p?.sku),
   };
 };
 

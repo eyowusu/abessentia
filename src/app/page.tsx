@@ -18,6 +18,7 @@ interface Product {
   rating?: number;
   stock: number;
   createdAt?: string;
+  sku?: string;
 }
 
 interface Category {
@@ -321,7 +322,11 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((category) => {
                 const name = category.name;
-                const meta = CATEGORY_META[name];
+                // Try exact match first, then case-insensitive match
+                const meta = CATEGORY_META[name] || 
+                  Object.entries(CATEGORY_META).find(([key]) => 
+                    key.toLowerCase() === name.toLowerCase()
+                  )?.[1];
                 const icon = meta?.icon ?? <Sparkles className="w-6 h-6" />;
                 const image = category.image || meta?.image || '/hero-2.jpeg';
                 const description = category.description || meta?.description || `Shop ${name}`;

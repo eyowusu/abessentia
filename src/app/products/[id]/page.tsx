@@ -18,6 +18,7 @@ interface Product {
   category?: string;
   stock?: number;
   rating?: number;
+  sku?: string;
 }
 
 export default function ProductDetailPage() {
@@ -145,6 +146,10 @@ export default function ProductDetailPage() {
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground font-serif leading-tight mb-4">
                 {product.name}
               </h1>
+
+              {product.sku && (
+                <p className="text-sm text-gray-500 mb-4">SKU: {product.sku}</p>
+              )}
 
               {product.rating && (
                 <div className="flex items-center gap-3 mb-6">
