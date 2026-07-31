@@ -113,11 +113,7 @@ export const productApi = {
   },
 
   getById: async (productId: string) => {
-    const response = await axios.get(`/api/v1/merchants/public/products/${productId}/`, {
-      params: scopeParams(),
-      baseURL: config.payglobe.apiBaseUrl,
-      timeout: 60000,
-    });
+    const response = await api.get(`/products/${productId}/`);
     return normalizeProduct(response.data);
   },
 
