@@ -133,10 +133,8 @@ export const productApi = {
 
   getCategories: async () => {
     const response = await api.get('/categories/');
-    console.log('Raw categories API response:', response.data);
     const cats = (response.data as Record<string, unknown> | null)?.categories || response.data || [];
-    console.log('Extracted cats array:', cats);
-    const mapped = (cats as unknown[]).map((cat: unknown) => {
+    return (cats as unknown[]).map((cat: unknown) => {
       if (typeof cat === 'string') {
         return { id: '', name: cat };
       }
@@ -148,8 +146,6 @@ export const productApi = {
         image: asString(c?.image),
       };
     });
-    console.log('Mapped categories:', mapped);
-    return mapped;
   },
 
   search: async (query: string, params?: Record<string, string | number | boolean>) => {

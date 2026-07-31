@@ -29,24 +29,44 @@ interface Category {
 }
 
 const CATEGORY_META: Record<string, { image: string; description: string; icon: ReactNode }> = {
-  'Soaps and Cleansers': {
+  '1 KG POUCHES': {
     image: '/IMG_3006.jpeg',
-    description: 'African Black Soap Shower Gel, Shea Butter Bar Soap, Sea Salt Scrub',
+    description: 'Bulk packaging for wholesale and large quantity needs',
     icon: <Droplets className="w-6 h-6" />
   },
-  'Creams & Moisturizers': {
+  'BEARD AND HAIR OIL': {
     image: '/IMG_4793.PNG',
-    description: 'Shea Butter Fusion, Cocoa Butter Creams, Baobab & Shea Body Oils',
+    description: 'Nourishing oils for beard grooming and hair care',
     icon: <Gem className="w-6 h-6" />
   },
-  'Personal Care': {
+  'BODY BUTTERS': {
     image: '/IMG_3007.jpeg',
-    description: 'Mosquito Repellent, Soy Wax Candles, Accessories',
+    description: 'Rich, creamy body butters for deep moisturization',
     icon: <Flower className="w-6 h-6" />
   },
-  'Gift Set and Bundles': {
+  'FACE AND BODY SCRUBS': {
     image: '/IMG_4795.PNG',
-    description: 'Curated gift sets for every occasion',
+    description: 'Exfoliating scrubs for smooth, glowing skin',
+    icon: <Sparkles className="w-6 h-6" />
+  },
+  'HAIR OILS': {
+    image: '/IMG_3006.jpeg',
+    description: 'Natural hair oils for nourishment and growth',
+    icon: <Droplets className="w-6 h-6" />
+  },
+  'MOISTURIZING BODY OILS': {
+    image: '/IMG_4793.PNG',
+    description: 'Lightweight body oils for daily hydration',
+    icon: <Gem className="w-6 h-6" />
+  },
+  'MORINGA BLACK SOAPS': {
+    image: '/IMG_3007.jpeg',
+    description: 'Traditional African black soap with moringa benefits',
+    icon: <Flower className="w-6 h-6" />
+  },
+  'PURE SEED OILS': {
+    image: '/IMG_4795.PNG',
+    description: 'Pure, unrefined seed oils for natural skincare',
     icon: <Sparkles className="w-6 h-6" />
   }
 };
@@ -196,9 +216,7 @@ export default function Home() {
           productApi.getTrending(),
         ]);
         if (!isMounted) return;
-        console.log('Raw category API response:', categoryList);
         setCategories(categoryList as Category[]);
-        console.log('Set categories state:', categoryList);
         setFeatured(featuredProducts.length > 0 ? featuredProducts : trendingProducts.slice(0, 4));
         setTrending(trendingProducts);
       } catch (error) {
@@ -324,13 +342,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((category) => {
                 const name = category.name;
-                console.log('Category name from API:', name);
-                // Try exact match first, then case-insensitive match
-                const meta = CATEGORY_META[name] || 
-                  Object.entries(CATEGORY_META).find(([key]) => 
-                    key.toLowerCase() === name.toLowerCase()
-                  )?.[1];
-                console.log('Matched meta for:', name, meta);
+                const meta = CATEGORY_META[name];
                 const icon = meta?.icon ?? <Sparkles className="w-6 h-6" />;
                 const image = category.image || meta?.image || '/hero-2.jpeg';
                 const description = category.description || meta?.description || `Shop ${name}`;
