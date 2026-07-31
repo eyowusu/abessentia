@@ -32,7 +32,7 @@ const normalizeProductList = (data: unknown) => {
 };
 
 const api = axios.create({
-  baseURL: config.payglobe.apiBaseUrl,
+  baseURL: '/api/proxy', // Use Next.js API proxy to avoid CORS
   timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
@@ -90,8 +90,8 @@ api.interceptors.response.use(
 // Product API functions
 export const productApi = {
   getAll: async (params?: Record<string, string | number | boolean>) => {
-    const response = await api.get('/api/v1/merchants/public/products/', {
-      params: { ...scopeParams(), ...params },
+    const response = await api.get('/products/', {
+      params: { ...params },
     });
     // Handle paginated response
     const data = response.data as Record<string, unknown> | null;
@@ -112,30 +112,26 @@ export const productApi = {
   },
 
   getById: async (productId: string) => {
-    const response = await api.get(`/api/v1/merchants/public/products/${productId}/`, {
+    const response = await axios.get(`/api/v1/merchants/public/products/${productId}/`, {
       params: scopeParams(),
+      baseURL: config.payglobe.apiBaseUrl,
+      timeout: 60000,
     });
     return normalizeProduct(response.data);
   },
 
   getFeatured: async () => {
-    const response = await api.get('/api/v1/merchants/public/products/featured/', {
-      params: scopeParams(),
-    });
+    const response = await api.get('/featured/');
     return normalizeProductList(response.data);
   },
 
   getTrending: async () => {
-    const response = await api.get('/api/v1/merchants/public/products/trending/', {
-      params: scopeParams(),
-    });
+    const response = await api.get('/trending/');
     return normalizeProductList(response.data);
   },
 
   getCategories: async () => {
-    const response = await api.get('/api/v1/merchants/public/products/categories/', {
-      params: scopeParams(),
-    });
+    const response = await api.get('/categories/');
     const cats = (response.data as Record<string, unknown> | null)?.categories || response.data || [];
     return (cats as unknown[]).map((cat: unknown) => {
       if (typeof cat === 'string') {
@@ -152,8 +148,10 @@ export const productApi = {
   },
 
   search: async (query: string, params?: Record<string, string | number | boolean>) => {
-    const response = await api.get('/api/v1/merchants/public/products/search/', {
+    const response = await axios.get('/api/v1/merchants/public/products/search/', {
       params: { q: query, search: query, ...scopeParams(), ...params },
+      baseURL: config.payglobe.apiBaseUrl,
+      timeout: 60000,
     });
     return normalizeProductList(response.data);
   },
