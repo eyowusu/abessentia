@@ -347,7 +347,7 @@ export default function Home() {
                 const image = category.image || '/hero-2.jpeg';
                 const description = category.description || meta?.description || `Shop ${name}`;
                 return (
-                  <Link key={category.id || name} href="/products" className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
+                  <Link key={category.id || name} href={`/products?category=${encodeURIComponent(name)}`} className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
                     <Image
                       src={image}
                       alt={name}
