@@ -50,22 +50,22 @@ const CATEGORY_META: Record<string, { image: string; description: string; icon: 
     icon: <Sparkles className="w-6 h-6" />
   },
   'HAIR OILS': {
-    image: '/IMG_3006.jpeg',
+    image: '/IMG_3008.jpeg',
     description: 'Natural hair oils for nourishment and growth',
     icon: <Droplets className="w-6 h-6" />
   },
   'MOISTURIZING BODY OILS': {
-    image: '/IMG_4793.PNG',
+    image: '/IMG_4797.PNG',
     description: 'Lightweight body oils for daily hydration',
     icon: <Gem className="w-6 h-6" />
   },
   'MORINGA BLACK SOAPS': {
-    image: '/IMG_3007.jpeg',
+    image: '/IMG_4798.PNG',
     description: 'Traditional African black soap with moringa benefits',
     icon: <Flower className="w-6 h-6" />
   },
   'PURE SEED OILS': {
-    image: '/IMG_4795.PNG',
+    image: '/IMG_4878.PNG',
     description: 'Pure, unrefined seed oils for natural skincare',
     icon: <Sparkles className="w-6 h-6" />
   }
@@ -344,7 +344,7 @@ export default function Home() {
                 const name = category.name;
                 const meta = CATEGORY_META[name];
                 const icon = meta?.icon ?? <Sparkles className="w-6 h-6" />;
-                const image = category.image || meta?.image || '/hero-2.jpeg';
+                const image = category.image || '/hero-2.jpeg';
                 const description = category.description || meta?.description || `Shop ${name}`;
                 return (
                   <Link key={category.id || name} href="/products" className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
