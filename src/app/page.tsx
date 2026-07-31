@@ -196,7 +196,9 @@ export default function Home() {
           productApi.getTrending(),
         ]);
         if (!isMounted) return;
+        console.log('Raw category API response:', categoryList);
         setCategories(categoryList as Category[]);
+        console.log('Set categories state:', categoryList);
         setFeatured(featuredProducts.length > 0 ? featuredProducts : trendingProducts.slice(0, 4));
         setTrending(trendingProducts);
       } catch (error) {
