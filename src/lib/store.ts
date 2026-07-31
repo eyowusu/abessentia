@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export interface CartItem {
   id: string;
@@ -19,51 +20,58 @@ interface CartStore {
   getTotalItems: () => number;
 }
 
-export const useCartStore = create<CartStore>((set, get) => ({
-  items: [],
-  
-  addItem: (item) => {
-    const quantity = Math.max(1, Math.floor(item.quantity ?? 1));
-    set((state) => {
-      const existingItem = state.items.find((i) => i.productId === item.productId);
-      if (existingItem) {
-        return {
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      
+      addItem: (item) => {
+        const quantity = Math.max(1, Math.floor(item.quantity ?? 1));
+        set((state) => {
+          const existingItem = state.items.find((i) => i.productId === item.productId);
+          if (existingItem) {
+            return {
+              items: state.items.map((i) =>
+                i.productId === item.productId
+                  ? { ...i, quantity: i.quantity + quantity }
+                  : i
+              ),
+            };
+          }
+          return { items: [...state.items, { ...item, quantity }] };
+        });
+      },
+      
+      removeItem: (productId) => {
+        set((state) => ({
+          items: state.items.filter((i) => i.productId !== productId),
+        }));
+      },
+      
+      updateQuantity: (productId, quantity) => {
+        if (quantity <= 0) {
+          get().removeItem(productId);
+          return;
+        }
+        set((state) => ({
           items: state.items.map((i) =>
-            i.productId === item.productId
-              ? { ...i, quantity: i.quantity + quantity }
-              : i
+            i.productId === productId ? { ...i, quantity } : i
           ),
-        };
-      }
-      return { items: [...state.items, { ...item, quantity }] };
-    });
-  },
-  
-  removeItem: (productId) => {
-    set((state) => ({
-      items: state.items.filter((i) => i.productId !== productId),
-    }));
-  },
-  
-  updateQuantity: (productId, quantity) => {
-    if (quantity <= 0) {
-      get().removeItem(productId);
-      return;
+        }));
+      },
+      
+      clearCart: () => set({ items: [] }),
+      
+      getTotalPrice: () => {
+        return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+      },
+      
+      getTotalItems: () => {
+        return get().items.reduce((total, item) => total + item.quantity, 0);
+      },
+    }),
+    {
+      name: 'ab-essentia-cart',
     }
-    set((state) => ({
-      items: state.items.map((i) =>
-        i.productId === productId ? { ...i, quantity } : i
-      ),
-    }));
-  },
-  
-  clearCart: () => set({ items: [] }),
-  
-  getTotalPrice: () => {
-    return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
-  },
-  
-  getTotalItems: () => {
-    return get().items.reduce((total, item) => total + item.quantity, 0);
-  },
-}));
+  )
+);

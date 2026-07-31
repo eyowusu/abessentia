@@ -93,7 +93,22 @@ export const productApi = {
     const response = await api.get('/api/v1/merchants/public/products/', {
       params: { ...scopeParams(), ...params },
     });
-    return normalizeProductList(response.data);
+    // Handle paginated response
+    const data = response.data as Record<string, unknown> | null;
+    if (data && typeof data === 'object' && 'results' in data) {
+      return {
+        results: normalizeProductList(data.results),
+        count: Number(data.count ?? 0),
+        next: data.next as string | null,
+        previous: data.previous as string | null,
+      };
+    }
+    return {
+      results: normalizeProductList(response.data),
+      count: normalizeProductList(response.data).length,
+      next: null,
+      previous: null,
+    };
   },
 
   getById: async (productId: string) => {

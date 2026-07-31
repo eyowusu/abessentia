@@ -39,7 +39,9 @@ export default function ProductsPage() {
   const fetchProducts = useCallback(async () => {
     try {
       const data = await productApi.getAll();
-      setProducts(data);
+      // Handle paginated response
+      const productList = (data as Record<string, unknown> | null)?.results || data;
+      setProducts(Array.isArray(productList) ? productList : []);
       setError(null);
     } catch (err) {
       console.error('Error fetching products:', err);
