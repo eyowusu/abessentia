@@ -166,7 +166,7 @@ const valueProps = [
 const aboutLinks = [
   { href: '/about', title: 'The Vision', desc: 'Our brand values and mission' },
   { href: '/about', title: 'The AB Essentia Story', desc: 'Our journey and heritage' },
-  { href: '/about', title: 'What\'s in our Products', desc: 'Our premium ingredients' },
+  { href: '/products', title: 'What\'s in our Products', desc: 'Our premium ingredients' },
   { href: '/about', title: 'The Founder', desc: 'Meet our founder' }
 ];
 
