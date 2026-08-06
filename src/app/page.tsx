@@ -144,18 +144,27 @@ export default function Home() {
     let isMounted = true;
     const loadData = async () => {
       try {
-        const [categoryList, featuredProducts, trendingProducts, bundlesData] = await Promise.all([
+        // Load each section independently so a failing /api/proxy/bundles or
+        // /api/proxy/featured call doesn't wipe out the rest of the landing page.
+        const [catRes, featRes, trendRes, bundleRes] = await Promise.allSettled([
           productApi.getCategories(),
           productApi.getFeatured(),
           productApi.getTrending(),
           productApi.getBundles(),
         ]);
+
         if (!isMounted) return;
-        // Add "ALL Products" category at the beginning
-        const allCategories = [{ id: 'all', name: 'ALL Products', description: 'Browse our complete collection of all products' }, ...(categoryList as Category[])];
+
+        const categoryList = (catRes.status === 'fulfilled' ? (catRes.value as Category[]) : []) as Category[];
+        const allCategories = [{ id: 'all', name: 'ALL Products', description: 'Browse our complete collection of all products' }, ...categoryList];
         setCategories(allCategories);
+
+        const featuredProducts = (featRes.status === 'fulfilled' ? (featRes.value as Product[]) : []) as Product[];
+        const trendingProducts = (trendRes.status === 'fulfilled' ? (trendRes.value as Product[]) : []) as Product[];
         setFeatured(featuredProducts.length > 0 ? featuredProducts : trendingProducts.slice(0, 4));
         setTrending(trendingProducts);
+
+        const bundlesData = bundleRes.status === 'fulfilled' ? bundleRes.value : [];
         setBundles(bundlesData || []);
       } catch (error) {
         console.error('Failed to load home page data:', error);
