@@ -30,7 +30,7 @@ interface Category {
 
 const CATEGORY_META: Record<string, { image: string; description: string; icon: ReactNode }> = {
   'ALL Products': {
-    image: '/hero-2.jpeg',
+    image: '/hero-aot-38.jpg',
     description: 'Browse our complete collection of all products',
     icon: <Sparkles className="w-6 h-6" />
   },
