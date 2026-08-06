@@ -11,8 +11,7 @@ const navLinks = [
   { href: '/products?category=creams-moisturizers', label: 'Creams & Moisturizers' },
   { href: '/products?category=personal-care', label: 'Personal Care' },
   { href: '/products?category=gift-sets', label: 'Gift Sets' },
-  { href: '/products?scent=fruit', label: 'Fruit Scents' },
-  { href: '/products?scent=floral', label: 'Floral Scents' },
+  { href: '/products', label: 'Shop By Scent Collection' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
@@ -44,7 +43,7 @@ export const Navigation = () => {
               </Link>
             ))}
             <div className="w-px h-4 bg-border mx-2" />
-            {navLinks.slice(4, 6).map((link) => (
+            {navLinks.slice(4, 5).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -54,7 +53,7 @@ export const Navigation = () => {
               </Link>
             ))}
             <div className="w-px h-4 bg-border mx-2" />
-            {navLinks.slice(6).map((link) => (
+            {navLinks.slice(5).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}

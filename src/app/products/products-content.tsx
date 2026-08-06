@@ -372,6 +372,11 @@ export default function ProductsPageContent() {
                       <Sparkles className="w-20 h-20 text-gray-300" />
                     </div>
                   )}
+                  {(!product.stock || product.stock <= 0) && (
+                    <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                      Out of Stock
+                    </div>
+                  )}
                   <button
                     onClick={() => setHoveredProduct(product.id)}
                     className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"

@@ -17,10 +17,10 @@ export const Footer = () => {
   const quickLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About Us' },
-    { href: '/about/founder', label: 'Our Founder' },
-    { href: '/about/story', label: 'Founders Blog' },
+    { href: '/about#founder', label: 'Our Founder' },
+    { href: '/about#story', label: 'Founders Blog' },
     { href: '/products', label: 'Products' },
-    { href: '/about/ingredients', label: 'Our Ingredients' },
+    { href: '/about#ingredients', label: 'Our Ingredients' },
     { href: '/contact', label: 'Contact Us' },
   ];
 
@@ -82,17 +82,13 @@ export const Footer = () => {
                   <MapPin className="w-4 h-4 text-secondary-light" />
                 </div>
                 <div className="text-gray-300">
-                  <p className="font-medium text-white">A&C Mall, East Legon</p>
-                  <p className="text-xs text-gray-500">+233 204525893 (Call/Whatsapp)</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-secondary/15 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-4 h-4 text-secondary-light" />
-                </div>
-                <div className="text-gray-300">
-                  <p className="font-medium text-white">Marina Mall, Airport City</p>
-                  <p className="text-xs text-gray-500">+233 205154298 (Call/Whatsapp)</p>
+                  <p className="font-medium text-white">Palace Supermarkets</p>
+                  <div className="grid grid-cols-2 gap-2 mt-2">
+                    <p className="text-xs text-gray-500">• Spintex</p>
+                    <p className="text-xs text-gray-500">• Labone</p>
+                    <p className="text-xs text-gray-500">• Adenta</p>
+                    <p className="text-xs text-gray-500">• Tema</p>
+                  </div>
                 </div>
               </li>
               <li className="pt-4 border-t border-gray-800">

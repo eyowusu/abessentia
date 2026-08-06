@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Sparkles, Truck, Shield, Star, Leaf, Droplets, Gem, Flower, Award, Globe, ChevronRight, ChevronLeft, Quote, MapPin, Phone, Clock, Loader2, TrendingUp } from 'lucide-react';
+import { ArrowRight, Sparkles, Truck, Shield, Leaf, Droplets, Gem, Flower, Award, Globe, ChevronRight, ChevronLeft, MapPin, Phone, Clock, Loader2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { productApi } from '@/lib/api-client';
@@ -29,6 +29,11 @@ interface Category {
 }
 
 const CATEGORY_META: Record<string, { image: string; description: string; icon: ReactNode }> = {
+  'ALL Products': {
+    image: '/hero-2.jpeg',
+    description: 'Browse our complete collection of all products',
+    icon: <Sparkles className="w-6 h-6" />
+  },
   '1 KG POUCHES': {
     image: '/IMG_3006.jpeg',
     description: 'Bulk packaging for wholesale and large quantity needs',
@@ -83,54 +88,9 @@ const getBadge = (product: Product): string => {
 
 const heroImages = [
   '/hero-aot-51.jpg',
-  '/hero-aot-52.jpg',
-  '/hero-aot-54.jpg'
+  '/hero-aot-52.jpg'
 ];
 
-const testimonials = [
-  {
-    id: 1,
-    name: 'Sarah Mensah',
-    rating: 5,
-    text: 'I love supporting AB Essentia Shea Butter and other beauty products. The creams make my skin so soft and the shower gels are just perfect.',
-    product: 'Mango Sorbet Shea Butter Fusion'
-  },
-  {
-    id: 2,
-    name: 'Emma Osei',
-    rating: 5,
-    text: 'Good product. I love it. It smells amazing.',
-    product: 'Vanilla Mint Body Oil'
-  },
-  {
-    id: 3,
-    name: 'Ama Kwarteng',
-    rating: 5,
-    text: 'Love this! More almond chocolate body wash for myself and my family. Will definitely be buying more!!!',
-    product: 'Almond & Chocolate African Black Soap Shower Gel'
-  },
-  {
-    id: 4,
-    name: 'Kojo Asante',
-    rating: 5,
-    text: 'Absolutely no words, it is clearing up my face and slowly restoring my skin\'s barrier. I love it!',
-    product: 'Clear Skin Bar Soap - Turmeric & Cinnamon'
-  },
-  {
-    id: 5,
-    name: 'Efua Mensah',
-    rating: 5,
-    text: 'Seriously, there are no words. The long-lasting scent, the glow it leaves on the skin woooow.',
-    product: 'Almond & Chocolate Body Cream'
-  },
-  {
-    id: 6,
-    name: 'Kwame Ofori',
-    rating: 5,
-    text: 'A pleasant, nourishing soap that\'s soothing for regular skincare routines. This smells fantastic!',
-    product: 'Baby Love Body Cream'
-  }
-];
 
 const ingredients = [
   { id: 1, name: 'Moringa', benefit: 'Rich in antioxidants, promotes skin regeneration', icon: <Leaf className="w-6 h-6" /> },
@@ -139,21 +99,14 @@ const ingredients = [
   { id: 4, name: 'Coconut Oil', benefit: 'Nourishing, protects skin barrier', icon: <Gem className="w-6 h-6" /> }
 ];
 
-const bundles = [
-  { id: 1, name: 'Hair Care Bundle', products: ['Hair Growth Oil', 'Coconut Oil'], image: '/IMG_2884.jpg' },
-  { id: 2, name: 'Complete Skincare Set', products: ['Moringa Oil', 'Shea Butter', 'Face Scrub'], image: '/IMG_2915.jpg' }
-];
-
-const scentCollections = [
-  { id: 1, name: 'Fruit', scents: ['Berry Tropical', 'Mango', 'Cocoa', 'Coconut'], icon: <Gem className="w-6 h-6" /> },
-  { id: 2, name: 'Floral', scents: ['Baby Love', 'Lavender', 'Moringa Rose'], icon: <Flower className="w-6 h-6" /> },
-  { id: 3, name: 'Herbs & Spice', scents: ['Lemon', 'Peppermint', 'Cinnamon & Spice', 'Fresh Herbs'], icon: <Leaf className="w-6 h-6" /> },
-  { id: 4, name: 'Unscented', scents: ['Unscented Oils and Soaps'], icon: <Droplets className="w-6 h-6" /> }
-];
-
 const retailLocations = [
-  { id: 1, name: 'A&C Mall, East Legon', phone: '+233 204525893', contact: 'Call/Whatsapp' },
-  { id: 2, name: 'Marina Mall, Airport City', phone: '+233 205154298', contact: 'Call/Whatsapp' }
+  { 
+    id: 1, 
+    name: 'Palace Supermarkets', 
+    branches: ['Spintex', 'Labone', 'Adenta', 'Tema'],
+    phone: '', 
+    contact: '' 
+  }
 ];
 
 const valueProps = [
@@ -171,33 +124,14 @@ const aboutLinks = [
 ];
 
 export default function Home() {
-  const testimonialsRef = useRef<HTMLDivElement>(null);
-  const [showLeft, setShowLeft] = useState(false);
-  const [showRight, setShowRight] = useState(true);
   const [currentHero, setCurrentHero] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
   const [featured, setFeatured] = useState<Product[]>([]);
   const [trending, setTrending] = useState<Product[]>([]);
+  const [bundles, setBundles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const handleTestimonialsScroll = () => {
-    if (testimonialsRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = testimonialsRef.current;
-      setShowLeft(scrollLeft > 0);
-      setShowRight(scrollLeft < scrollWidth - clientWidth - 10);
-    }
-  };
 
-  useEffect(() => {
-    const ref = testimonialsRef.current;
-    if (ref) {
-      ref.addEventListener('scroll', handleTestimonialsScroll);
-      handleTestimonialsScroll();
-    }
-    return () => {
-      if (ref) ref.removeEventListener('scroll', handleTestimonialsScroll);
-    };
-  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -210,15 +144,19 @@ export default function Home() {
     let isMounted = true;
     const loadData = async () => {
       try {
-        const [categoryList, featuredProducts, trendingProducts] = await Promise.all([
+        const [categoryList, featuredProducts, trendingProducts, bundlesData] = await Promise.all([
           productApi.getCategories(),
           productApi.getFeatured(),
           productApi.getTrending(),
+          productApi.getBundles(),
         ]);
         if (!isMounted) return;
-        setCategories(categoryList as Category[]);
+        // Add "ALL Products" category at the beginning
+        const allCategories = [{ id: 'all', name: 'ALL Products', description: 'Browse our complete collection of all products' }, ...(categoryList as Category[])];
+        setCategories(allCategories);
         setFeatured(featuredProducts.length > 0 ? featuredProducts : trendingProducts.slice(0, 4));
         setTrending(trendingProducts);
+        setBundles(bundlesData || []);
       } catch (error) {
         console.error('Failed to load home page data:', error);
       } finally {
@@ -229,11 +167,6 @@ export default function Home() {
     return () => { isMounted = false; };
   }, []);
 
-  const scrollTestimonials = (direction: 'left' | 'right') => {
-    if (testimonialsRef.current) {
-      testimonialsRef.current.scrollBy({ left: direction === 'left' ? -400 : 400, behavior: 'smooth' });
-    }
-  };
 
   return (
     <div className="flex flex-col bg-background">
@@ -347,7 +280,7 @@ export default function Home() {
                 const image = category.image || '/hero-2.jpeg';
                 const description = category.description || meta?.description || `Shop ${name}`;
                 return (
-                  <Link key={category.id || name} href={`/products?category=${encodeURIComponent(name)}`} className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
+                  <Link key={category.id || name} href={name === 'ALL Products' ? '/products' : `/products?category=${encodeURIComponent(name)}`} className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
                     <Image
                       src={image}
                       alt={name}
@@ -372,37 +305,6 @@ export default function Home() {
               })}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* Scent Collections */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-              <Sparkles className="w-4 h-4" />
-              Fragrance
-            </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Shop by Scent Collection</h2>
-            <p className="text-lg text-gray-600">Find your perfect scent from our curated collections.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {scentCollections.map((collection) => (
-              <Card key={collection.id} className="group p-6 hover:-translate-y-2 transition-transform duration-300">
-                <div className="w-14 h-14 mb-6 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                  {collection.icon}
-                </div>
-                <h3 className="text-xl font-bold text-foreground font-serif mb-4">{collection.name}</h3>
-                <ul className="space-y-2">
-                  {collection.scents.map((scent, index) => (
-                    <li key={index} className="text-sm text-gray-600 hover:text-primary cursor-pointer transition-colors">
-                      {scent}
-                    </li>
-                  ))}
-                </ul>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -443,6 +345,11 @@ export default function Home() {
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Sparkles className="w-20 h-20 text-gray-300" />
+                        </div>
+                      )}
+                      {(!product.stock || product.stock <= 0) && (
+                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                          Out of Stock
                         </div>
                       )}
                     </div>
@@ -500,6 +407,11 @@ export default function Home() {
                           <Sparkles className="w-20 h-20 text-gray-300" />
                         </div>
                       )}
+                      {(!product.stock || product.stock <= 0) && (
+                        <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
+                          Out of Stock
+                        </div>
+                      )}
                     </div>
                     <CardContent className="p-6">
                       <span className="inline-block text-xs font-bold text-secondary uppercase tracking-wider mb-2">
@@ -553,88 +465,47 @@ export default function Home() {
             <p className="text-lg text-gray-600">Get more value with our curated product bundles.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {bundles.map((bundle) => (
-              <Card key={bundle.id} className="group overflow-hidden hover:-translate-y-2 transition-transform duration-300">
-                <div className="flex flex-col md:flex-row">
-                  <div className="md:w-2/5 aspect-square md:aspect-auto bg-gray-50 relative">
-                    <Image
-                      src={bundle.image}
-                      alt={bundle.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, 40vw"
-                    />
+            {bundles.length > 0 ? (
+              bundles.map((bundle) => (
+                <Card key={bundle.id} className="group overflow-hidden hover:-translate-y-2 transition-transform duration-300">
+                  <div className="flex flex-col md:flex-row">
+                    <div className="md:w-2/5 aspect-square md:aspect-auto bg-gray-50 relative">
+                      {bundle.image ? (
+                        <Image
+                          src={bundle.image}
+                          alt={bundle.name}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, 40vw"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Sparkles className="w-20 h-20 text-gray-300" />
+                        </div>
+                      )}
+                    </div>
+                    <CardContent className="md:w-3/5 p-8 flex flex-col justify-center">
+                      <span className="inline-flex w-fit items-center gap-1.5 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
+                        <Award className="w-3 h-3" /> Best Value
+                      </span>
+                      <h3 className="text-2xl font-bold text-foreground font-serif mb-2">{bundle.name}</h3>
+                      <p className="text-gray-600 text-sm mb-6">Includes: {Array.isArray(bundle.products) ? bundle.products.join(', ') : bundle.products}</p>
+                      <Link href="/products" className="inline-flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all">
+                        Shop Bundle <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    </CardContent>
                   </div>
-                  <CardContent className="md:w-3/5 p-8 flex flex-col justify-center">
-                    <span className="inline-flex w-fit items-center gap-1.5 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
-                      <Award className="w-3 h-3" /> Best Value
-                    </span>
-                    <h3 className="text-2xl font-bold text-foreground font-serif mb-2">{bundle.name}</h3>
-                    <p className="text-gray-600 text-sm mb-6">Includes: {bundle.products.join(', ')}</p>
-                    <Link href="/products" className="inline-flex items-center gap-2 text-primary font-semibold group-hover:gap-3 transition-all">
-                      Shop Bundle <ChevronRight className="w-4 h-4" />
-                    </Link>
-                  </CardContent>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-12 text-gray-500">
+                No bundles available at this time.
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
-              <Sparkles className="w-4 h-4" />
-              Testimonials
-            </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Let customers speak for us</h2>
-          </div>
-          <div className="relative">
-            {showLeft && (
-              <button
-                onClick={() => scrollTestimonials('left')}
-                className="absolute -left-4 lg:-left-12 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-surface rounded-full shadow-xl flex items-center justify-center hover:bg-muted transition-colors border border-border/60"
-              >
-                <ChevronLeft className="w-6 h-6 text-foreground" />
-              </button>
-            )}
-            <div
-              ref={testimonialsRef}
-              className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {testimonials.map((testimonial) => (
-                <Card key={testimonial.id} className="flex-shrink-0 w-80 p-6 hover:-translate-y-1 transition-transform duration-300">
-                  <div className="flex items-center gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-primary fill-primary" />
-                    ))}
-                  </div>
-                  <p className="text-gray-600 mb-6 leading-relaxed text-sm">&ldquo;{testimonial.text}&rdquo;</p>
-                  <div className="flex items-center justify-between mt-auto">
-                    <div>
-                      <p className="font-bold text-foreground text-sm">{testimonial.name}</p>
-                      <p className="text-xs text-secondary font-medium mt-0.5">{testimonial.product}</p>
-                    </div>
-                    <Quote className="w-8 h-8 text-primary/20" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-            {showRight && (
-              <button
-                onClick={() => scrollTestimonials('right')}
-                className="absolute -right-4 lg:-right-12 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-surface rounded-full shadow-xl flex items-center justify-center hover:bg-muted transition-colors border border-border/60"
-              >
-                <ChevronRight className="w-6 h-6 text-foreground" />
-              </button>
-            )}
-          </div>
-        </div>
-      </section>
 
       {/* About Quick Links */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted">
@@ -677,34 +548,31 @@ export default function Home() {
       </section>
 
       {/* Retail Locations */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted">
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-muted">
         <div className="max-w-7xl mx-auto">
-          <div className="max-w-2xl mb-12">
+          <div className="text-center mb-8">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
               <MapPin className="w-4 h-4" />
               Retail
             </span>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Retail Shops</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {retailLocations.map((loc) => (
-              <Card key={loc.id} className="p-6 hover:-translate-y-1 transition-transform duration-300">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center text-secondary flex-shrink-0">
-                    <MapPin className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground font-serif mb-1">{loc.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      <span>{loc.phone}</span>
-                      <span className="text-secondary font-medium">({loc.contact})</span>
-                    </div>
-                  </div>
+          <Card className="p-6 mb-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center text-secondary">
+                <MapPin className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground font-serif">Palace Supermarkets</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {retailLocations[0].branches.map((branch, idx) => (
+                <div key={idx} className="flex items-center text-gray-600">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full mr-1.5" />
+                  {branch}
                 </div>
-              </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Card>
           <Card className="p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">

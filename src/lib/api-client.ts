@@ -92,7 +92,7 @@ api.interceptors.response.use(
 export const productApi = {
   getAll: async (params?: Record<string, string | number | boolean>) => {
     const response = await api.get('/products/', {
-      params: { ...params },
+      params: { ...params, include_out_of_stock: true },
     });
     // Handle paginated response
     const data = response.data as Record<string, unknown> | null;
@@ -118,13 +118,22 @@ export const productApi = {
   },
 
   getFeatured: async () => {
-    const response = await api.get('/featured/');
+    const response = await api.get('/featured/', {
+      params: { include_out_of_stock: true },
+    });
     return normalizeProductList(response.data);
   },
 
   getTrending: async () => {
-    const response = await api.get('/trending/');
+    const response = await api.get('/trending/', {
+      params: { include_out_of_stock: true },
+    });
     return normalizeProductList(response.data);
+  },
+
+  getBundles: async () => {
+    const response = await api.get('/bundles/');
+    return response.data;
   },
 
   getCategories: async () => {
