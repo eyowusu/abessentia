@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Search, ShoppingCart, Loader2, Star, Heart, Filter, X, ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -357,7 +358,8 @@ export default function ProductsPageContent() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="group overflow-hidden hover:-translate-y-2 transition-transform duration-300">
+              <Link key={product.id} href={`/products/${product.id}`} className="group block">
+                <Card className="overflow-hidden hover:-translate-y-2 transition-transform duration-300">
                 <div className="aspect-square bg-muted relative">
                   {product.image ? (
                     <Image
@@ -409,6 +411,7 @@ export default function ProductsPageContent() {
                   </Button>
                 </CardContent>
               </Card>
+              </Link>
             ))}
           </div>
         )}

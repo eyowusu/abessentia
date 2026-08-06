@@ -242,7 +242,7 @@ export default function ProductDetailPage() {
                   {[
                     'Premium quality products',
                     'Fast and reliable shipping',
-                    'Secure payment via PayGlobe',
+                    'Secure Checkout powered by PayGlobe',
                     'Excellent customer support',
                   ].map((item) => (
                     <li key={item} className="flex items-center gap-3">

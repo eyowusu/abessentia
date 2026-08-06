@@ -29,7 +29,7 @@ interface Category {
 }
 
 const CATEGORY_META: Record<string, { image: string; description: string; icon: ReactNode }> = {
-  'ALL Products': {
+  'ALL PRODUCTS': {
     image: '/hero-aot-38.jpg',
     description: 'Browse our complete collection of all products',
     icon: <Sparkles className="w-6 h-6" />
@@ -156,7 +156,9 @@ export default function Home() {
         if (!isMounted) return;
 
         const categoryList = (catRes.status === 'fulfilled' ? (catRes.value as Category[]) : []) as Category[];
-        const allCategories = [{ id: 'all', name: 'ALL Products', description: 'Browse our complete collection of all products' }, ...categoryList];
+        // Check if "ALL PRODUCTS" already exists in PayGlobe categories (case-insensitive)
+        const allProductsExists = categoryList.some(cat => cat.name.toUpperCase() === 'ALL PRODUCTS');
+        const allCategories = allProductsExists ? categoryList : [{ id: 'all', name: 'ALL PRODUCTS', description: 'Browse our complete collection of all products' }, ...categoryList];
         setCategories(allCategories);
 
         const featuredProducts = (featRes.status === 'fulfilled' ? (featRes.value as Product[]) : []) as Product[];
@@ -286,10 +288,10 @@ export default function Home() {
                 const name = category.name;
                 const meta = CATEGORY_META[name];
                 const icon = meta?.icon ?? <Sparkles className="w-6 h-6" />;
-                const image = category.image || '/hero-2.jpeg';
+                const image = category.image || meta?.image || '/hero-2.jpeg';
                 const description = category.description || meta?.description || `Shop ${name}`;
                 return (
-                  <Link key={category.id || name} href={name === 'ALL Products' ? '/products' : `/products?category=${encodeURIComponent(name)}`} className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
+                  <Link key={category.id || name} href={name === 'ALL PRODUCTS' ? '/products' : `/products?category=${encodeURIComponent(name)}`} className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]">
                     <Image
                       src={image}
                       alt={name}

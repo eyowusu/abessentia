@@ -7,11 +7,11 @@ import { ShoppingCart, Menu, X, Search, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/lib/store';
 
 const navLinks = [
-  { href: '/products?category=soaps-cleansers', label: 'Soaps & Cleansers' },
-  { href: '/products?category=creams-moisturizers', label: 'Creams & Moisturizers' },
-  { href: '/products?category=personal-care', label: 'Personal Care' },
-  { href: '/products?category=gift-sets', label: 'Gift Sets' },
-  { href: '/products', label: 'Shop By Scent Collection' },
+  { href: '/products?category=MORINGA BLACK SOAPS', label: 'Soaps & Cleansers' },
+  { href: '/products?category=MOISTURIZING BODY OILS', label: 'Creams & Moisturizers' },
+  { href: '/products?category=BODY BUTTERS', label: 'Personal Care' },
+  { href: '#', label: 'Gift Sets', disabled: true },
+  { href: '#', label: 'Shop By Scent Collection', disabled: true },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
@@ -34,23 +34,41 @@ export const Navigation = () => {
           {/* Desktop Navigation - Categories */}
           <div className="hidden lg:flex flex-none items-center justify-center space-x-1">
             {navLinks.slice(0, 4).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-4 py-2 rounded-full text-gray-600 hover:text-primary hover:bg-primary/5 transition-all duration-200 font-medium text-sm"
-              >
-                {link.label}
-              </Link>
+              link.disabled ? (
+                <span
+                  key={link.href}
+                  className="px-4 py-2 rounded-full text-gray-400 cursor-not-allowed font-medium text-sm"
+                >
+                  {link.label}
+                </span>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-4 py-2 rounded-full text-gray-600 hover:text-primary hover:bg-primary/5 transition-all duration-200 font-medium text-sm"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
             <div className="w-px h-4 bg-border mx-2" />
             {navLinks.slice(4, 5).map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="px-4 py-2 rounded-full text-gray-600 hover:text-primary hover:bg-primary/5 transition-all duration-200 font-medium text-sm"
-              >
-                {link.label}
-              </Link>
+              link.disabled ? (
+                <span
+                  key={link.href}
+                  className="px-4 py-2 rounded-full text-gray-400 cursor-not-allowed font-medium text-sm"
+                >
+                  {link.label}
+                </span>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-4 py-2 rounded-full text-gray-600 hover:text-primary hover:bg-primary/5 transition-all duration-200 font-medium text-sm"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
             <div className="w-px h-4 bg-border mx-2" />
             {navLinks.slice(5).map((link) => (
@@ -124,14 +142,23 @@ export const Navigation = () => {
         {isOpen && (
           <div className="lg:hidden py-4 space-y-1 bg-surface/95 backdrop-blur-xl border-b border-border/60 -mx-4 px-4 rounded-b-3xl shadow-2xl">
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="block px-4 py-3 rounded-xl hover:bg-primary/5 text-gray-700 hover:text-primary font-medium transition-all duration-200 text-sm"
-                onClick={() => setIsOpen(false)}
-              >
-                {link.label}
-              </Link>
+              link.disabled ? (
+                <span
+                  key={link.href}
+                  className="block px-4 py-3 rounded-xl text-gray-400 cursor-not-allowed font-medium text-sm"
+                >
+                  {link.label}
+                </span>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="block px-4 py-3 rounded-xl hover:bg-primary/5 text-gray-700 hover:text-primary font-medium transition-all duration-200 text-sm"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
             <Link
               href="/products"
