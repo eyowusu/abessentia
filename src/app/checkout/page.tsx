@@ -120,7 +120,7 @@ export default function CheckoutPage() {
                       value={formData.fullName}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Kwame Ansah"
+                      placeholder="Enter your full name"
                     />
                   </div>
                   <div>
@@ -131,7 +131,7 @@ export default function CheckoutPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="kwame@example.com"
+                      placeholder="Enter your email address"
                     />
                   </div>
                   <div>
@@ -142,7 +142,7 @@ export default function CheckoutPage() {
                       value={formData.phone}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="0244000000"
+                      placeholder="Enter your phone number"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -153,7 +153,7 @@ export default function CheckoutPage() {
                       value={formData.address}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="12 Independence Ave"
+                      placeholder="Enter your street address"
                     />
                   </div>
                   <div>
@@ -164,7 +164,7 @@ export default function CheckoutPage() {
                       value={formData.city}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Accra"
+                      placeholder="Enter your city"
                     />
                   </div>
                   <div>
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
                       value={formData.state}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Greater Accra"
+                      placeholder="Enter your state or region"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -186,7 +186,7 @@ export default function CheckoutPage() {
                       value={formData.postalCode}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="00233"
+                      placeholder="Enter your postal code"
                     />
                   </div>
                 </div>
