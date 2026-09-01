@@ -42,7 +42,7 @@ export default function ProductsPageContent() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const data = await productApi.getAll();
+      const data = await productApi.getAll({ page_size: 100 });
       const productList = (data as Record<string, unknown> | null)?.results || data;
       setProducts(Array.isArray(productList) ? productList : []);
       setError(null);

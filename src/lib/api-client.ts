@@ -91,22 +91,56 @@ api.interceptors.response.use(
 // Product API functions
 export const productApi = {
   getAll: async (params?: Record<string, string | number | boolean>) => {
-    const response = await api.get('/products/', {
-      params: { ...params, include_out_of_stock: true },
-    });
-    // Handle paginated response
-    const data = response.data as Record<string, unknown> | null;
-    if (data && typeof data === 'object' && 'results' in data) {
+    const baseParams = { ...params, include_out_of_stock: true };
+
+    const fetchPage = async (pageParams: Record<string, string | number | boolean>) => {
+      const response = await api.get('/products/', { params: pageParams });
+      const data = response.data as Record<string, unknown> | null;
+      if (data && typeof data === 'object' && 'results' in data) {
+        return {
+          results: normalizeProductList(data.results),
+          count: Number(data.count ?? 0),
+          next: data.next as string | null | undefined,
+          previous: data.previous as string | null | undefined,
+        };
+      }
       return {
-        results: normalizeProductList(data.results),
-        count: Number(data.count ?? 0),
-        next: data.next as string | null,
-        previous: data.previous as string | null,
+        results: normalizeProductList(response.data),
+        count: normalizeProductList(response.data).length,
+        next: null,
+        previous: null,
       };
+    };
+
+    let page = await fetchPage(baseParams);
+    let results = page.results;
+    let count = page.count;
+    let next = page.next;
+
+    while (next && typeof next === 'string') {
+      let nextPage: number | null = null;
+      try {
+        const nextUrl = new URL(next);
+        const pageParam = nextUrl.searchParams.get('page');
+        if (pageParam) {
+          nextPage = parseInt(pageParam, 10);
+        }
+      } catch {
+        nextPage = null;
+      }
+
+      if (!nextPage || Number.isNaN(nextPage)) {
+        break;
+      }
+
+      page = await fetchPage({ ...baseParams, page: nextPage });
+      results = results.concat(page.results);
+      next = page.next;
     }
+
     return {
-      results: normalizeProductList(response.data),
-      count: normalizeProductList(response.data).length,
+      results,
+      count,
       next: null,
       previous: null,
     };

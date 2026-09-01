@@ -106,7 +106,7 @@ function CheckoutSuccessContent() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 mt-2 bg-primary rounded-full flex-shrink-0" />
-                    Track your order in your PayGlobe merchant dashboard
+                    You&apos;ll receive an email update when your order ships
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 mt-2 bg-primary rounded-full flex-shrink-0" />
