@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, ShoppingCart, Loader2, Star, Heart, Filter, X, ChevronDown, Sparkles } from 'lucide-react';
+import { Search, ShoppingCart, Loader2, Star, Heart, Filter, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore } from '@/lib/store';
@@ -31,8 +31,6 @@ export default function ProductsPageContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>(['all']);
-  const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
-
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPriceRange, setSelectedPriceRange] = useState<string>('all');
   const [selectedSize, setSelectedSize] = useState<string>('all');
@@ -380,7 +378,6 @@ export default function ProductsPageContent() {
                     </div>
                   )}
                   <button
-                    onClick={() => setHoveredProduct(product.id)}
                     className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
                   >
                     <Heart className="w-4 h-4" />

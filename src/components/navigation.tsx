@@ -14,6 +14,7 @@ const navLinks = [
   { href: '#', label: 'Shop By Scent Collection', disabled: true },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
+  { href: '/account', label: 'My Orders' },
 ];
 
 export const Navigation = () => {

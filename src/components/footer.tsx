@@ -21,6 +21,7 @@ export const Footer = () => {
     { href: '/about#story', label: 'Founders Blog' },
     { href: '/products', label: 'Products' },
     { href: '/about#ingredients', label: 'Our Ingredients' },
+    { href: '/orders/track', label: 'Track My Order' },
     { href: '/contact', label: 'Contact Us' },
   ];
 

@@ -1,5 +1,4 @@
 import axios, { AxiosError } from 'axios';
-import { config } from './config';
 
 const asString = (value: unknown): string | undefined =>
   typeof value === 'string' ? value : undefined;
@@ -39,18 +38,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Scope all PayGlobe product queries to this merchant/store so the shop does
-// not accidentally list products from other merchants on PayGlobe.
-const scopeParams = (): Record<string, string> => {
-  const result: Record<string, string> = {};
-  if (config.payglobe.storeId) {
-    result.store_id = config.payglobe.storeId;
-  } else if (config.payglobe.merchantId) {
-    result.merchant_id = config.payglobe.merchantId;
-  }
-  return result;
-};
 
 // Request interceptor
 api.interceptors.request.use(
@@ -114,7 +101,7 @@ export const productApi = {
 
     let page = await fetchPage(baseParams);
     let results = page.results;
-    let count = page.count;
+    const count = page.count;
     let next = page.next;
 
     while (next && typeof next === 'string') {
@@ -187,32 +174,6 @@ export const productApi = {
     });
   },
 
-  search: async (query: string, params?: Record<string, string | number | boolean>) => {
-    const response = await axios.get('/api/v1/merchants/public/products/search/', {
-      params: { q: query, search: query, ...scopeParams(), ...params },
-      baseURL: config.payglobe.apiBaseUrl,
-      timeout: 60000,
-    });
-    return normalizeProductList(response.data);
-  },
-};
-
-// Store API functions
-export const storeApi = {
-  getAll: async () => {
-    const response = await api.get('/api/v1/merchants/public/stores/');
-    return response.data;
-  },
-  
-  getById: async (storeId: string) => {
-    const response = await api.get(`/api/v1/merchants/public/stores/${storeId}/`);
-    return response.data;
-  },
-  
-  getProducts: async (storeId: string, params?: Record<string, string | number | boolean>) => {
-    const response = await api.get(`/api/v1/merchants/public/stores/${storeId}/products/`, { params });
-    return response.data;
-  },
 };
 
 // Payment API functions
@@ -226,7 +187,7 @@ export const paymentApi = {
     shipping_address: string;
     shipping_city: string;
     shipping_state: string;
-    shipping_postal_code: string;
+    shipping_postal_code?: string;
     shipping_country?: string;
     shipping_phone: string;
     items: Array<{ product_id: string | number; quantity: number }>;
@@ -238,6 +199,8 @@ export const paymentApi = {
       access_code: string;
       external_order_id: string;
       amount: number;
+      subtotal: number;
+      shipping_cost: number;
     };
   },
 
@@ -245,9 +208,11 @@ export const paymentApi = {
     const response = await axios.post('/api/paystack/fulfill', data);
     return response.data as {
       success: boolean;
+      status?: 'succeeded' | 'not_paid' | 'error' | 'refunded';
       order_number?: string | null;
       order_id?: string | null;
       reference: string;
+      refund_id?: string;
       error?: string;
     };
   },

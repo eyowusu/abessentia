@@ -40,16 +40,45 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await fulfillFromReference(reference);
-    if (!result.success) {
-      // Log but still return 200 so Paystack does not hammer retries for
-      // permanent errors; investigate via logs / PayGlobe reconciliation.
-      console.error('Paystack webhook fulfillment did not succeed:', result.error);
+    // The webhook is the reliability backbone: even if the customer closed their
+    // browser, we have the money and must not leave them stranded. Auto-refund for
+    // non-retryable failures means PayGlobe never has to touch the payout, but the
+    // customer does not have to wait for a manual refund either.
+    const result = await fulfillFromReference(reference, { autoRefund: true });
+
+    if (result.status === 'refunded') {
+      console.error(
+        'PAID_ORDER_REFUNDED reference=%s refund_id=%s error=%s',
+        reference,
+        result.refund_id,
+        result.error
+      );
+      return NextResponse.json(
+        { status: 'refunded', reference, refund_id: result.refund_id, error: result.error },
+        { status: 200 }
+      );
     }
+
+    if (!result.success) {
+      // A charge succeeded but the order did not land. Retryable failures (network,
+      // PayGlobe 5xx) still return 500 so Paystack retries. Non-retryable failures
+      // should have already been refunded above.
+      console.error(
+        'PAID_ORDER_NOT_RECORDED reference=%s status=%s error=%s',
+        reference,
+        result.status,
+        result.error
+      );
+      return NextResponse.json(
+        { status: 'fulfillment_failed', reference, error: result.error },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ status: 'processed', order_number: result.order_number ?? null });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Webhook fulfillment failed';
-    console.error('Paystack webhook error:', message);
+    console.error('PAID_ORDER_NOT_RECORDED reference=%s error=%s', reference, message);
     // Return 500 so Paystack retries transient failures (e.g. PayGlobe briefly down).
     return NextResponse.json({ error: message }, { status: 500 });
   }

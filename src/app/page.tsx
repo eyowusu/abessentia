@@ -3,7 +3,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Sparkles, Truck, Shield, Leaf, Droplets, Gem, Flower, Award, Globe, ChevronRight, ChevronLeft, MapPin, Phone, Clock, Loader2, TrendingUp } from 'lucide-react';
+import { ArrowRight, Sparkles, Truck, Shield, Leaf, Droplets, Gem, Flower, Award, Globe, ChevronRight, MapPin, Clock, Loader2, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { productApi } from '@/lib/api-client';
@@ -26,6 +26,13 @@ interface Category {
   name: string;
   description?: string;
   image?: string;
+}
+
+interface Bundle {
+  id: string;
+  name: string;
+  image?: string;
+  products?: string | string[];
 }
 
 const CATEGORY_META: Record<string, { image: string; description: string; icon: ReactNode }> = {
@@ -128,7 +135,7 @@ export default function Home() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [featured, setFeatured] = useState<Product[]>([]);
   const [trending, setTrending] = useState<Product[]>([]);
-  const [bundles, setBundles] = useState<any[]>([]);
+  const [bundles, setBundles] = useState<Bundle[]>([]);
   const [loading, setLoading] = useState(true);
 
 
@@ -166,7 +173,7 @@ export default function Home() {
         setFeatured(featuredProducts.length > 0 ? featuredProducts : trendingProducts.slice(0, 4));
         setTrending(trendingProducts);
 
-        const bundlesData = bundleRes.status === 'fulfilled' ? bundleRes.value : [];
+        const bundlesData = (bundleRes.status === 'fulfilled' ? bundleRes.value : []) as Bundle[];
         setBundles(bundlesData || []);
       } catch (error) {
         console.error('Failed to load home page data:', error);

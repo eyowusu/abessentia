@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
 import { fulfillFromReference } from '@/lib/server/paystack';
 
 /**
@@ -19,23 +18,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'reference is required' }, { status: 400 });
     }
 
-    const result = await fulfillFromReference(reference);
+    // Allow the success-page path to auto-refund too; a refunded result is returned
+    // immediately and the list-refund guard prevents duplicate Paystack refunds if the
+    // webhook already handled it.
+    const result = await fulfillFromReference(reference, { autoRefund: true });
 
     if (!result.success) {
+      if (result.status === 'refunded') {
+        return NextResponse.json(
+          {
+            success: false,
+            status: 'refunded',
+            reference,
+            refund_id: result.refund_id,
+            error: result.error,
+          },
+          { status: 200 }
+        );
+      }
       const status = result.status === 'not_paid' ? 402 : 400;
       return NextResponse.json({ success: false, error: result.error }, { status });
     }
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const axiosError = axios.isAxiosError(error) ? error : undefined;
-    console.error('PayGlobe fulfill error:', axiosError?.response?.data || (error as Error).message);
+    console.error('PayGlobe fulfill error:', error);
     const message =
-      (axiosError?.response?.data as { error?: string })?.error ||
-      (axiosError?.response?.data as { detail?: string })?.detail ||
-      axiosError?.message ||
-      (error instanceof Error ? error.message : 'Failed to fulfill order');
-    const status = axiosError?.response?.status || 500;
-    return NextResponse.json({ success: false, error: message }, { status });
+      error instanceof Error ? error.message : 'Failed to fulfill order';
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

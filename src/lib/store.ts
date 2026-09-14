@@ -10,6 +10,25 @@ export interface CartItem {
   productId: string;
 }
 
+/** A change the server made to a cart line when the cart was refreshed. */
+export interface CartAdjustment {
+  name: string;
+  type: 'price_changed' | 'quantity_reduced' | 'removed';
+  oldPrice?: number;
+  newPrice?: number;
+  oldQuantity?: number;
+  newQuantity?: number;
+}
+
+interface CartLineCheck {
+  product_id: number;
+  name: string;
+  price: number;
+  available: number;
+  requested: number;
+  isAvailable: boolean;
+}
+
 interface CartStore {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
@@ -18,6 +37,8 @@ interface CartStore {
   clearCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
+  /** Apply server truth to the cart, returning what changed so it can be shown. */
+  applyServerCheck: (lines: CartLineCheck[]) => CartAdjustment[];
 }
 
 export const useCartStore = create<CartStore>()(
@@ -68,6 +89,59 @@ export const useCartStore = create<CartStore>()(
       
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
+      },
+
+      applyServerCheck: (lines) => {
+        const adjustments: CartAdjustment[] = [];
+        const byId = new Map(lines.map((l) => [String(l.product_id), l]));
+
+        const nextItems: CartItem[] = [];
+
+        for (const item of get().items) {
+          const line = byId.get(String(item.productId));
+
+          // Not reported on (shouldn't happen) - leave the line untouched rather than
+          // silently deleting something the customer chose.
+          if (!line) {
+            nextItems.push(item);
+            continue;
+          }
+
+          if (!line.isAvailable || line.available <= 0) {
+            adjustments.push({ name: line.name || item.name, type: 'removed' });
+            continue;
+          }
+
+          let quantity = item.quantity;
+          if (quantity > line.available) {
+            adjustments.push({
+              name: line.name || item.name,
+              type: 'quantity_reduced',
+              oldQuantity: quantity,
+              newQuantity: line.available,
+            });
+            quantity = line.available;
+          }
+
+          if (line.price !== item.price) {
+            adjustments.push({
+              name: line.name || item.name,
+              type: 'price_changed',
+              oldPrice: item.price,
+              newPrice: line.price,
+            });
+          }
+
+          nextItems.push({
+            ...item,
+            name: line.name || item.name,
+            price: line.price,
+            quantity,
+          });
+        }
+
+        set({ items: nextItems });
+        return adjustments;
       },
     }),
     {

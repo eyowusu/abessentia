@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import { Lock, Loader2, Sparkles, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore } from '@/lib/store';
 import { paymentApi } from '@/lib/api-client';
+import { GHANA_REGIONS, FREE_SHIPPING_THRESHOLD, quoteShipping } from '@/lib/shipping';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -21,22 +23,33 @@ export default function CheckoutPage() {
     address: '',
     city: '',
     state: '',
-    postalCode: '',
+    // GhanaPost GPS digital address (e.g. GA-183-4290). This is what couriers in Ghana
+    // actually navigate by; a postal code is meaningless here.
+    gpsAddress: '',
+    landmark: '',
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  // Delivery fee preview. Recomputed authoritatively on the server at checkout, so
+  // this is only ever a preview - the two use the same function to stay in step.
+  const subtotal = getTotalPrice();
+  const shipping = quoteShipping(formData.state, subtotal);
+  const orderTotal = subtotal + shipping.fee;
 
   const handlePayGlobeCheckout = async () => {
     setLoading(true);
     setError(null);
 
-    const requiredFields = ['email', 'phone', 'fullName', 'address', 'city', 'state', 'postalCode'] as const;
+    const requiredFields = ['email', 'phone', 'fullName', 'address', 'city', 'state'] as const;
     const missing = requiredFields.filter(key => !formData[key].trim());
     if (missing.length > 0) {
-      setError('Please fill in all customer and shipping details.');
+      setError('Please fill in all customer and delivery details.');
       setLoading(false);
       return;
     }
@@ -50,10 +63,18 @@ export default function CheckoutPage() {
         callback_url: `${origin}/checkout/success`,
         customer_name: formData.fullName,
         customer_phone: formData.phone,
-        shipping_address: formData.address,
+        // The GPS code and landmark travel with the street address because that is
+        // what the person delivering the parcel needs to read in one place.
+        shipping_address: [
+          formData.address,
+          formData.gpsAddress.trim() ? `GPS: ${formData.gpsAddress.trim()}` : '',
+          formData.landmark.trim() ? `Landmark: ${formData.landmark.trim()}` : '',
+        ]
+          .filter(Boolean)
+          .join(' | '),
         shipping_city: formData.city,
         shipping_state: formData.state,
-        shipping_postal_code: formData.postalCode,
+        shipping_postal_code: formData.gpsAddress.trim(),
         shipping_country: 'GH',
         shipping_phone: formData.phone,
         items: items.map(item => ({
@@ -69,7 +90,23 @@ export default function CheckoutPage() {
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      setError('Failed to process checkout. Please check your Paystack/PayGlobe configuration and try again.');
+
+      // A 409 means an item sold out while this cart was open. The customer has NOT
+      // been charged, and telling them exactly what happened is far better than a
+      // generic failure that makes them wonder whether their money left.
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        const data = err.response.data as { error?: string };
+        setError(
+          `${data?.error || 'An item in your cart just sold out.'} ` +
+            `You have not been charged. Please adjust your cart and try again.`
+        );
+      } else {
+        const message =
+          axios.isAxiosError(err) && (err.response?.data as { error?: string })?.error
+            ? (err.response!.data as { error?: string }).error!
+            : 'We could not start your payment. You have not been charged. Please try again.';
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -168,25 +205,50 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">State / Region</label>
-                    <input
-                      type="text"
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                    <select
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Enter your state or region"
-                    />
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-white"
+                    >
+                      <option value="">Select your region</option>
+                      {GHANA_REGIONS.map((region) => (
+                        <option key={region.name} value={region.name}>
+                          {region.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      GhanaPost GPS Address{' '}
+                      <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
                     <input
                       type="text"
-                      name="postalCode"
-                      value={formData.postalCode}
+                      name="gpsAddress"
+                      value={formData.gpsAddress}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                      placeholder="Enter your postal code"
+                      placeholder="e.g. GA-183-4290"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Helps our courier find you faster.
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nearest Landmark{' '}
+                      <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="landmark"
+                      value={formData.landmark}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="e.g. Behind Melcom, near Shell filling station"
                     />
                   </div>
                 </div>
@@ -234,20 +296,45 @@ export default function CheckoutPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'})</span>
-                    <span className="font-semibold text-foreground">₵{getTotalPrice().toFixed(2)}</span>
+                    <span className="font-semibold text-foreground">₵{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span className="text-secondary font-medium">Free</span>
+                    <span>
+                      Delivery
+                      {formData.state && (
+                        <span className="block text-xs text-gray-500">
+                          {shipping.label} &middot; {shipping.estimate}
+                        </span>
+                      )}
+                    </span>
+                    {!formData.state ? (
+                      <span className="text-gray-400 text-sm">Select a region</span>
+                    ) : shipping.fee === 0 ? (
+                      <span className="text-secondary font-medium">Free</span>
+                    ) : (
+                      <span className="font-semibold text-foreground">
+                        ₵{shipping.fee.toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Tax</span>
                     <span className="text-secondary font-medium">Included</span>
                   </div>
+
+                  {/* Nudge toward the free-delivery threshold: it is a real saving and
+                      the customer cannot act on it if we never mention it. */}
+                  {!shipping.freeShippingApplied && subtotal > 0 && (
+                    <p className="text-xs text-secondary bg-secondary/5 rounded-xl p-3">
+                      Add ₵{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} more to get
+                      free delivery.
+                    </p>
+                  )}
+
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-2xl font-bold text-foreground">
                       <span>Total</span>
-                      <span className="text-primary">₵{getTotalPrice().toFixed(2)}</span>
+                      <span className="text-primary">₵{orderTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

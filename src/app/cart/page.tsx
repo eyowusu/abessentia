@@ -1,17 +1,67 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, Shield } from 'lucide-react';
+import axios from 'axios';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, Shield, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useCartStore } from '@/lib/store';
+import { useCartStore, type CartAdjustment } from '@/lib/store';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/shipping';
 
 export default function CartPage() {
   const router = useRouter();
   const { items, removeItem, updateQuantity, getTotalPrice, getTotalItems, clearCart } = useCartStore();
+  const applyServerCheck = useCartStore((state) => state.applyServerCheck);
+  const [adjustments, setAdjustments] = useState<CartAdjustment[]>([]);
+  const hasRefreshed = useRef(false);
+
+  // Refresh the cart against live prices and stock once, when the page opens.
+  //
+  // The cart is persisted in localStorage, so it can be days old. Correcting it here
+  // means the customer sees the true total on this page rather than discovering a
+  // different amount on the payment page.
+  useEffect(() => {
+    if (hasRefreshed.current) return;
+
+    const current = useCartStore.getState().items;
+    if (current.length === 0) return;
+
+    hasRefreshed.current = true;
+
+    axios
+      .post('/api/cart/validate', {
+        items: current.map((item) => ({
+          product_id: item.productId,
+          quantity: item.quantity,
+        })),
+      })
+      .then((response) => {
+        const lines = response.data?.lines;
+        if (Array.isArray(lines) && lines.length > 0) {
+          setAdjustments(applyServerCheck(lines));
+        }
+      })
+      .catch((error) => {
+        // A failed refresh must not block the cart: the server re-prices
+        // authoritatively at checkout anyway.
+        console.error('Cart refresh failed:', error);
+      });
+  }, [applyServerCheck]);
 
   const handleCheckout = () => router.push('/checkout');
+
+  const adjustmentMessage = (adjustment: CartAdjustment) => {
+    switch (adjustment.type) {
+      case 'removed':
+        return `${adjustment.name} is no longer available and has been removed.`;
+      case 'quantity_reduced':
+        return `Only ${adjustment.newQuantity} of ${adjustment.name} left — your quantity was reduced from ${adjustment.oldQuantity}.`;
+      case 'price_changed':
+        return `The price of ${adjustment.name} changed from ₵${adjustment.oldPrice?.toFixed(2)} to ₵${adjustment.newPrice?.toFixed(2)}.`;
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -47,6 +97,24 @@ export default function CartPage() {
           </h1>
           <p className="text-gray-600">Review your items before checkout.</p>
         </div>
+
+        {/* Anything the refresh changed, stated plainly. A silent correction would be
+            just as confusing as the stale price it replaced. */}
+        {adjustments.length > 0 && (
+          <div className="mb-8 p-5 bg-amber-50 border border-amber-200 rounded-2xl">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-4 h-4 text-amber-700" />
+              <p className="font-semibold text-amber-900">Your cart was updated</p>
+            </div>
+            <ul className="space-y-1 text-sm text-amber-800">
+              {adjustments.map((adjustment, index) => (
+                <li key={`${adjustment.name}-${adjustment.type}-${index}`}>
+                  {adjustmentMessage(adjustment)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -130,18 +198,25 @@ export default function CartPage() {
                     <span className="font-semibold text-foreground">₵{getTotalPrice().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
+                    <span>Delivery</span>
                     <span className="text-secondary font-medium">Calculated at checkout</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Tax</span>
-                    <span className="text-secondary font-medium">Calculated at checkout</span>
+                    <span className="text-secondary font-medium">Included</span>
                   </div>
                   <div className="border-t border-border pt-4">
+                    {/* Labelled "Subtotal", not "Total": delivery still has to be added
+                        once we know the region, and calling this the total would make
+                        the checkout figure look like an unexplained increase. */}
                     <div className="flex justify-between text-2xl font-bold text-foreground">
-                      <span>Total</span>
+                      <span>Subtotal</span>
                       <span className="text-primary">₵{getTotalPrice().toFixed(2)}</span>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Delivery is added at checkout based on your region. Free delivery on
+                      orders over ₵{FREE_SHIPPING_THRESHOLD}.
+                    </p>
                   </div>
                 </div>
 
