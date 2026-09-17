@@ -1,33 +1,25 @@
 /**
- * Ghana delivery regions and shipping fees.
+ * Ghana delivery regions and delivery windows.
  *
- * Shipping was previously hard-coded to free for everywhere, which quietly made the
- * merchant absorb the cost of every out-of-region delivery. Rates are grouped into
- * zones because the real cost difference is Accra vs. other cities vs. the north, not
- * per-region micro-pricing.
- *
- * Amounts are in GHS. Kept on the server and echoed to the client so the browser can
- * preview a total, but the authoritative figure is recomputed server-side at checkout.
+ * No delivery fee is charged online: the rider collects their own fee from the
+ * customer in person on delivery. Regions still map to zones because the zone
+ * drives the delivery estimate shown at checkout and the shipping_method recorded
+ * on the PayGlobe order for fulfillment.
  */
 
 export type ShippingZone = 'accra' | 'major_city' | 'other';
 
-interface ZoneRate {
+interface ZoneInfo {
   label: string;
-  /** Delivery fee in GHS. */
-  fee: number;
   /** Indicative delivery window, shown to the customer. */
   estimate: string;
 }
 
-export const SHIPPING_ZONES: Record<ShippingZone, ZoneRate> = {
-  accra: { label: 'Greater Accra', fee: 25, estimate: '1-2 business days' },
-  major_city: { label: 'Major cities', fee: 40, estimate: '2-4 business days' },
-  other: { label: 'Other regions', fee: 60, estimate: '3-6 business days' },
+export const SHIPPING_ZONES: Record<ShippingZone, ZoneInfo> = {
+  accra: { label: 'Greater Accra', estimate: '1-2 business days' },
+  major_city: { label: 'Major cities', estimate: '2-4 business days' },
+  other: { label: 'Other regions', estimate: '3-6 business days' },
 };
-
-/** Order subtotal (GHS) at or above which delivery is free. */
-export const FREE_SHIPPING_THRESHOLD = 500;
 
 /** The 16 regions of Ghana, each mapped to its delivery zone. */
 export const GHANA_REGIONS: Array<{ name: string; zone: ShippingZone }> = [
@@ -49,7 +41,7 @@ export const GHANA_REGIONS: Array<{ name: string; zone: ShippingZone }> = [
   { name: 'Western North', zone: 'other' },
 ];
 
-/** Zone for a region name. Unknown regions fall back to the most expensive zone. */
+/** Zone for a region name. Unknown regions fall back to the longest window. */
 export function zoneForRegion(region: string): ShippingZone {
   const match = GHANA_REGIONS.find(
     (r) => r.name.toLowerCase() === region.trim().toLowerCase()
@@ -57,30 +49,24 @@ export function zoneForRegion(region: string): ShippingZone {
   return match ? match.zone : 'other';
 }
 
-export interface ShippingQuote {
+export interface DeliveryInfo {
   zone: ShippingZone;
   label: string;
-  fee: number;
   estimate: string;
-  freeShippingApplied: boolean;
 }
 
 /**
- * Delivery fee for a region and order subtotal.
- *
- * Used by both the browser (to preview) and the server (authoritatively), so the two
- * can never disagree about what the customer was quoted.
+ * Delivery window for a region. Used by both the browser (to preview) and the
+ * server (authoritatively), so the two can never disagree about what the customer
+ * was shown.
  */
-export function quoteShipping(region: string, subtotal: number): ShippingQuote {
+export function quoteShipping(region: string): DeliveryInfo {
   const zone = zoneForRegion(region);
   const rate = SHIPPING_ZONES[zone];
-  const freeShippingApplied = subtotal >= FREE_SHIPPING_THRESHOLD;
 
   return {
     zone,
     label: rate.label,
-    fee: freeShippingApplied ? 0 : rate.fee,
     estimate: rate.estimate,
-    freeShippingApplied,
   };
 }

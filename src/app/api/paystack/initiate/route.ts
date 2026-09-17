@@ -77,10 +77,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order total must be greater than zero' }, { status: 400 });
     }
 
-    // Delivery fee is computed here, from the destination region, and never taken from
-    // the browser. The customer is charged subtotal + delivery.
-    const shipping = quoteShipping(String(shipping_state), priced.subtotal);
-    const orderTotal = Number((priced.subtotal + shipping.fee).toFixed(2));
+    // No delivery fee is charged online - the rider collects their own fee from the
+    // customer in person. The zone still travels with the order so the merchant knows
+    // the destination band, and the customer is charged the subtotal alone.
+    const shipping = quoteShipping(String(shipping_state));
+    const orderTotal = priced.subtotal;
     const amountMinor = Math.round(orderTotal * 100);
 
     if (amountMinor <= 0) {
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
       expected_amount_minor: amountMinor,
       currency: currency.toUpperCase(),
       shipping_method: `standard-${shipping.zone}`,
-      shipping_cost: shipping.fee,
+      shipping_cost: 0,
       customer_name,
       customer_email: email,
       customer_phone,
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
       external_order_id: externalOrderId,
       amount: orderTotal,
       subtotal: priced.subtotal,
-      shipping_cost: shipping.fee,
+      shipping_cost: 0,
     });
   } catch (error: unknown) {
     // Stock ran out while the customer was filling in the form. This is an expected

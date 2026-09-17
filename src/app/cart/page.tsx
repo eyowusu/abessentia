@@ -8,7 +8,6 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, Shield, Info } 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore, type CartAdjustment } from '@/lib/store';
-import { FREE_SHIPPING_THRESHOLD } from '@/lib/shipping';
 
 export default function CartPage() {
   const router = useRouter();
@@ -199,23 +198,22 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Delivery</span>
-                    <span className="text-secondary font-medium">Calculated at checkout</span>
+                    <span className="text-secondary font-medium">Paid to rider on delivery</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
                     <span>Tax</span>
                     <span className="text-secondary font-medium">Included</span>
                   </div>
                   <div className="border-t border-border pt-4">
-                    {/* Labelled "Subtotal", not "Total": delivery still has to be added
-                        once we know the region, and calling this the total would make
-                        the checkout figure look like an unexplained increase. */}
+                    {/* This is also the total charged online: no delivery fee is added
+                        at checkout because the rider collects their fee in person. */}
                     <div className="flex justify-between text-2xl font-bold text-foreground">
-                      <span>Subtotal</span>
+                      <span>Total</span>
                       <span className="text-primary">₵{getTotalPrice().toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                      Delivery is added at checkout based on your region. Free delivery on
-                      orders over ₵{FREE_SHIPPING_THRESHOLD}.
+                      Delivery is arranged after checkout — you pay the delivery fee
+                      directly to the rider when your order arrives.
                     </p>
                   </div>
                 </div>

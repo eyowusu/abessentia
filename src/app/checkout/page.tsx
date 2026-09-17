@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore } from '@/lib/store';
 import { paymentApi } from '@/lib/api-client';
-import { GHANA_REGIONS, FREE_SHIPPING_THRESHOLD, quoteShipping } from '@/lib/shipping';
+import { GHANA_REGIONS, quoteShipping } from '@/lib/shipping';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -36,11 +36,12 @@ export default function CheckoutPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Delivery fee preview. Recomputed authoritatively on the server at checkout, so
-  // this is only ever a preview - the two use the same function to stay in step.
+  // No delivery fee is charged online: the rider collects their own fee from the
+  // customer in person on delivery. The zone lookup only drives the estimate shown
+  // here; the order total charged through Paystack is the subtotal alone.
   const subtotal = getTotalPrice();
-  const shipping = quoteShipping(formData.state, subtotal);
-  const orderTotal = subtotal + shipping.fee;
+  const shipping = quoteShipping(formData.state);
+  const orderTotal = subtotal;
 
   const handlePayGlobeCheckout = async () => {
     setLoading(true);
@@ -309,12 +310,8 @@ export default function CheckoutPage() {
                     </span>
                     {!formData.state ? (
                       <span className="text-gray-400 text-sm">Select a region</span>
-                    ) : shipping.fee === 0 ? (
-                      <span className="text-secondary font-medium">Free</span>
                     ) : (
-                      <span className="font-semibold text-foreground">
-                        ₵{shipping.fee.toFixed(2)}
-                      </span>
+                      <span className="text-secondary font-medium">Paid to rider on delivery</span>
                     )}
                   </div>
                   <div className="flex justify-between text-gray-600">
@@ -322,14 +319,12 @@ export default function CheckoutPage() {
                     <span className="text-secondary font-medium">Included</span>
                   </div>
 
-                  {/* Nudge toward the free-delivery threshold: it is a real saving and
-                      the customer cannot act on it if we never mention it. */}
-                  {!shipping.freeShippingApplied && subtotal > 0 && (
-                    <p className="text-xs text-secondary bg-secondary/5 rounded-xl p-3">
-                      Add ₵{(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} more to get
-                      free delivery.
-                    </p>
-                  )}
+                  {/* The customer must know the rider will ask for a delivery fee at
+                      the door - hiding it here guarantees a refusal on delivery. */}
+                  <p className="text-xs text-gray-500 bg-secondary/5 rounded-xl p-3">
+                    No delivery charge is added online. You pay the delivery fee
+                    directly to the rider when your order arrives.
+                  </p>
 
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-2xl font-bold text-foreground">
