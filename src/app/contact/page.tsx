@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Send, Loader2, Sparkles, Clock, CheckCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Sparkles, Clock, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -12,22 +12,20 @@ export default function ContactPage() {
     subject: '',
     message: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [sent, setSent] = useState(false);
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      console.log('Contact form submitted:', formData);
-      setSuccess(true);
-      setFormData({ name: '', email: '', subject: '', message: '' });
-      setTimeout(() => setSuccess(false), 5000);
-    } catch (err) {
-      console.error('Contact form error:', err);
-    } finally {
-      setLoading(false);
-    }
+    const text = [
+      `Name: ${formData.name}`,
+      `Email: ${formData.email}`,
+      `Subject: ${formData.subject}`,
+      '',
+      formData.message,
+    ].join('\n');
+    window.open(`https://wa.me/233242351314?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+    setSent(true);
+    setFormData({ name: '', email: '', subject: '', message: '' });
+    setTimeout(() => setSent(false), 5000);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -115,10 +113,10 @@ export default function ContactPage() {
                 <h2 className="text-2xl font-bold text-foreground font-serif">Send us a Message</h2>
               </div>
 
-              {success && (
+              {sent && (
                 <div className="mb-6 p-4 bg-secondary/10 border border-secondary/20 rounded-xl text-secondary flex items-center gap-2">
                   <CheckCircle className="w-5 h-5" />
-                  Thank you! Your message has been sent successfully.
+                  WhatsApp opened — your message is ready to send.
                 </div>
               )}
 
@@ -164,21 +162,12 @@ export default function ContactPage() {
                 <Button
                   type="submit"
                   size="lg"
-                  disabled={loading}
                   className="w-full"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 w-5 h-5 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 w-5 h-5" />
-                      Send Message
-                    </>
-                  )}
+                  <Send className="mr-2 w-5 h-5" />
+                  Send via WhatsApp
                 </Button>
+                <p className="text-xs text-center text-gray-400">Opens WhatsApp with your message ready to send.</p>
               </form>
             </CardContent>
           </Card>

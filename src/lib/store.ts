@@ -41,6 +41,41 @@ interface CartStore {
   applyServerCheck: (lines: CartLineCheck[]) => CartAdjustment[];
 }
 
+export interface WishlistItem {
+  id: string;
+  name: string;
+  price: number;
+  image?: string;
+}
+
+interface WishlistStore {
+  items: WishlistItem[];
+  toggle: (item: WishlistItem) => void;
+  remove: (id: string) => void;
+  clear: () => void;
+  has: (id: string) => boolean;
+}
+
+export const useWishlistStore = create<WishlistStore>()(
+  persist(
+    (set, get) => ({
+      items: [],
+      toggle: (item) => {
+        const items = get().items;
+        if (items.some((i) => i.id === item.id)) {
+          set({ items: items.filter((i) => i.id !== item.id) });
+        } else {
+          set({ items: [...items, item] });
+        }
+      },
+      remove: (id) => set({ items: get().items.filter((i) => i.id !== id) }),
+      clear: () => set({ items: [] }),
+      has: (id) => get().items.some((i) => i.id === id),
+    }),
+    { name: 'ab-essentia-wishlist' }
+  )
+);
+
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
