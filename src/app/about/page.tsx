@@ -3,7 +3,7 @@ import { Target, Heart, Users, Award, Sparkles } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-20">
@@ -11,21 +11,21 @@ export default function AboutPage() {
             <Sparkles className="w-4 h-4" />
             Our Story
           </span>
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground font-serif mb-6">About AB Essentia</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">About AB Essentia</h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Beauty by Nature — A legacy of care, handcrafted for today by nature.
           </p>
         </div>
 
         {/* Beauty by Nature Section */}
-        <section className="mb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
                 <Heart className="w-4 h-4" />
                 Our Heritage
               </span>
-              <h2 className="text-4xl font-bold text-foreground font-serif mb-6">Beauty by Nature</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-6">Beauty by Nature</h2>
               <div className="space-y-5 text-gray-600 leading-relaxed text-lg">
                 <p>
                   At the heart of AB ESSENTIA is the story of our grandmother Agnes Baidoo — a hardworking, industrious woman who trusted in nature&apos;s power long before &quot;clean beauty&quot; had a name. She showed us how to turn simple botanicals into remedies that cared for the body holistically, teaching us that true care comes from the earth.
@@ -51,14 +51,14 @@ export default function AboutPage() {
         </section>
 
         {/* Mission Section */}
-        <section className="mb-24">
+        <section className="mb-16">
           <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/10">
             <CardContent className="p-12">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
                   <Target className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-foreground font-serif">Our Mission</h2>
+                <h2 className="text-3xl font-bold text-foreground">Our Mission</h2>
               </div>
               <p className="text-lg text-gray-700 leading-relaxed">
                 At AB ESSENTIA, our mission is to provide high-quality, natural products that will nourish, heal and protect our customers Skin and hair, while delivering exceptional customer care and building long-term relationships. We are committed to sustainability, community involvement, women empowerment and promoting Ghanaian culture through our delivery of service to our customers.
@@ -68,8 +68,8 @@ export default function AboutPage() {
         </section>
 
         {/* Vision Section */}
-        <section className="mb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 lg:order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-secondary/10">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -81,7 +81,7 @@ export default function AboutPage() {
                 <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary-dark rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-secondary/20">
                   <Award className="w-8 h-8 text-white" />
                 </div>
-                <h2 className="text-3xl font-bold text-foreground font-serif">Our Vision</h2>
+                <h2 className="text-3xl font-bold text-foreground">Our Vision</h2>
               </div>
               <p className="text-lg text-gray-700 leading-relaxed">
                 Our vision is to become a leading brand renowned for our commitment to quality, customer satisfaction and community development. We aim to inspire a love for natural living and promote Ghanaian culture, while making a positive impact on the environment and society.
@@ -91,13 +91,13 @@ export default function AboutPage() {
         </section>
 
         {/* Values Section */}
-        <section className="mb-24">
+        <section className="mb-16">
           <div className="text-center mb-14">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
               <Sparkles className="w-4 h-4" />
               What We Stand For
             </span>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">Our Values</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Our Values</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -110,7 +110,7 @@ export default function AboutPage() {
                 <div className={`w-16 h-16 mx-auto mb-6 bg-gradient-to-br ${value.from} ${value.to} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                   <div className="text-white">{value.icon}</div>
                 </div>
-                <h3 className="font-bold text-xl mb-3 text-foreground font-serif">{value.title}</h3>
+                <h3 className="font-bold text-xl mb-3 text-foreground">{value.title}</h3>
                 <p className="text-gray-600 leading-relaxed">{value.desc}</p>
               </Card>
             ))}

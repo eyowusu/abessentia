@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Heart, Shield, Check, Minus, Plus, Truck, Award, MessageCircle } from 'lucide-react';
+import { ShoppingCart, Heart, Shield, Minus, Plus, Truck, Award, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { useMounted } from '@/lib/use-mounted';
 import type { CatalogueProduct } from '@/lib/server/catalogue';
@@ -72,17 +72,17 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
               {product.category}
             </Link>
           )}
-          <h1 className="text-3xl md:text-5xl font-bold text-foreground font-serif leading-tight mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-4">
             {product.name}
           </h1>
-          <p className="text-3xl md:text-4xl font-bold text-primary mb-2">
+          <p className="text-2xl md:text-3xl font-bold text-primary mb-2">
             GH₵{product.price.toFixed(2)}
           </p>
         </div>
 
         {product.description && (
           <Card className="p-6">
-            <h3 className="text-lg font-bold text-foreground font-serif mb-3">Description</h3>
+            <h3 className="text-lg font-bold text-foreground mb-3">Description</h3>
             <p className="text-gray-600 leading-relaxed whitespace-pre-line">{product.description}</p>
           </Card>
         )}
@@ -144,28 +144,6 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
             </Button>
           </a>
         </div>
-
-        <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/10">
-          <CardContent className="p-8">
-            <div className="flex items-center gap-2 mb-5">
-              <Check className="w-5 h-5 text-secondary" />
-              <h3 className="font-bold text-foreground font-serif">Why Choose Us?</h3>
-            </div>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
-              {[
-                'Handcrafted natural ingredients',
-                'Nationwide rider delivery',
-                'Secure payment via Paystack',
-                'Personal WhatsApp support',
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-3">
-                  <Check className="w-4 h-4 text-secondary flex-shrink-0" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
 
         <div className="grid grid-cols-3 gap-4 pt-4">
           {[

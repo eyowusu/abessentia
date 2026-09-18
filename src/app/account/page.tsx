@@ -140,14 +140,14 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-3xl mx-auto">
         <div className="mb-10 text-center">
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
             <Sparkles className="w-4 h-4" />
             My Orders
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             Your Orders
           </h1>
           <p className="text-gray-600">
@@ -158,7 +158,7 @@ export default function AccountPage() {
         </div>
 
         {step === 'loading' && (
-          <div className="flex justify-center py-20">
+          <div className="flex justify-center py-14">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
           </div>
         )}
@@ -285,7 +285,7 @@ export default function AccountPage() {
                     <CardContent className="p-5 md:p-6">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="font-bold text-foreground font-serif text-lg">
+                          <p className="font-bold text-foreground text-lg">
                             {order.order_number}
                           </p>
                           <p className="text-sm text-gray-500">

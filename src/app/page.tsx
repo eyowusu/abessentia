@@ -58,17 +58,6 @@ const CATEGORY_META: Record<string, { image: string; description: string }> = {
   },
 };
 
-const CATEGORY_ICONS: Record<string, typeof Sparkles> = {
-  '1 KG POUCHES': Droplets,
-  'BEARD AND HAIR OIL': Gem,
-  'BODY BUTTERS': Flower,
-  'FACE AND BODY SCRUBS': Sparkles,
-  'HAIR OILS': Droplets,
-  'MOISTURIZING BODY OILS': Gem,
-  'MORINGA BLACK SOAPS': Flower,
-  'PURE SEED OILS': Sparkles,
-};
-
 const ingredients = [
   { name: 'Moringa', benefit: 'Rich in antioxidants, promotes skin regeneration', icon: Leaf },
   { name: 'Shea Butter', benefit: 'Deep moisturization, reduces inflammation', icon: Droplets },
@@ -108,7 +97,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col bg-background">
       {/* Hero — single static image */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden bg-black">
+      <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-black">
         <Image
           src="/hero-aot-51.jpg"
           alt="AB Essentia natural beauty products"
@@ -122,11 +111,10 @@ export default async function Home() {
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
           <div className="max-w-2xl space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white/90 text-sm font-medium">
-              <Sparkles className="w-4 h-4 text-primary-light" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary text-white text-xs font-semibold tracking-wide uppercase">
               Handcrafted in Ghana
             </div>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white font-serif leading-[1.1] text-balance">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-[1.1] tracking-tight text-balance">
               Nature&apos;s Care, Handcrafted for You
             </h1>
             <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-xl">
@@ -151,14 +139,14 @@ export default async function Home() {
       </section>
 
       {/* Product Categories */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted">
+      <section className="py-14 px-4 sm:px-6 lg:px-8 bg-muted">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl mb-12">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
               <Sparkles className="w-4 h-4" />
               Categories
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
               The best way to buy the products you love.
             </h2>
             <p className="text-lg text-gray-600">
@@ -169,14 +157,13 @@ export default async function Home() {
             {allCategories.map((category) => {
               const name = category.name;
               const meta = CATEGORY_META[name];
-              const Icon = CATEGORY_ICONS[name] ?? Sparkles;
               const image = category.image || meta?.image || '/hero-2.jpeg';
               const description = category.description || meta?.description || `Shop ${name}`;
               return (
                 <Link
                   key={category.id || name}
                   href={name === 'ALL PRODUCTS' ? '/products' : `/products?category=${encodeURIComponent(name)}`}
-                  className="group relative block overflow-hidden rounded-3xl bg-black aspect-[4/5]"
+                  className="group relative block overflow-hidden rounded-2xl bg-black aspect-[4/3]"
                 >
                   <Image
                     src={image}
@@ -186,13 +173,10 @@ export default async function Home() {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                    <div className="w-12 h-12 mb-4 bg-primary/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-primary-light">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white font-serif mb-2">{name}</h3>
-                    <p className="text-white/80 text-sm leading-relaxed mb-4 line-clamp-2">{description}</p>
-                    <span className="inline-flex items-center text-primary-light font-semibold group-hover:gap-2 transition-all">
+                  <div className="absolute inset-0 p-5 flex flex-col justify-end">
+                    <h3 className="text-lg font-bold text-white mb-1">{name}</h3>
+                    <p className="text-white/75 text-xs leading-relaxed mb-3 line-clamp-2">{description}</p>
+                    <span className="inline-flex items-center text-primary-light text-sm font-semibold group-hover:gap-2 transition-all">
                       Shop <ChevronRight className="w-4 h-4" />
                     </span>
                   </div>
@@ -205,7 +189,7 @@ export default async function Home() {
 
       {/* Featured Products */}
       {featuredList.length > 0 && (
-        <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
+        <section className="py-14 px-4 sm:px-6 lg:px-8 bg-background">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
               <div>
@@ -213,7 +197,7 @@ export default async function Home() {
                   <Sparkles className="w-4 h-4" />
                   Featured
                 </span>
-                <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif">Featured Products</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">Featured Products</h2>
               </div>
               <Link href="/products" className="inline-flex items-center gap-1 text-primary font-semibold hover:gap-2 transition-all">
                 View All <ChevronRight className="w-5 h-5" />
@@ -230,7 +214,7 @@ export default async function Home() {
 
       {/* Trending Products */}
       {trending.length > 0 && (
-        <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted">
+        <section className="py-14 px-4 sm:px-6 lg:px-8 bg-muted">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
               <div>
@@ -238,7 +222,7 @@ export default async function Home() {
                   <TrendingUp className="w-4 h-4" />
                   Trending
                 </span>
-                <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif">Trending Products</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground">Trending Products</h2>
               </div>
               <Link href="/products" className="inline-flex items-center gap-1 text-primary font-semibold hover:gap-2 transition-all">
                 View All <ChevronRight className="w-5 h-5" />
@@ -254,14 +238,14 @@ export default async function Home() {
       )}
 
       {/* Ingredients */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
+      <section className="py-14 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
               <Leaf className="w-4 h-4" />
               Ingredients
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Nature&apos;s Best Ingredients</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Nature&apos;s Best Ingredients</h2>
             <p className="text-lg text-gray-600">
               Our products are crafted with premium organic ingredients sourced directly from Ghana.
             </p>
@@ -272,7 +256,7 @@ export default async function Home() {
                 <div className="w-14 h-14 mx-auto mb-5 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
                   <ingredient.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground font-serif mb-2">{ingredient.name}</h3>
+                <h3 className="text-xl font-bold text-foreground mb-2">{ingredient.name}</h3>
                 <p className="text-gray-600 text-sm">{ingredient.benefit}</p>
               </Card>
             ))}
@@ -282,14 +266,14 @@ export default async function Home() {
 
       {/* Bundles */}
       {bundles.length > 0 && (
-        <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted">
+        <section className="py-14 px-4 sm:px-6 lg:px-8 bg-muted">
           <div className="max-w-7xl mx-auto">
             <div className="text-center max-w-2xl mx-auto mb-14">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
                 <Award className="w-4 h-4" />
                 Save More
               </span>
-              <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Bundle &amp; Save</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Bundle &amp; Save</h2>
               <p className="text-lg text-gray-600">Get more value with our curated product bundles.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -315,7 +299,7 @@ export default async function Home() {
                       <span className="inline-flex w-fit items-center gap-1.5 bg-secondary text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
                         <Award className="w-3 h-3" /> Best Value
                       </span>
-                      <h3 className="text-2xl font-bold text-foreground font-serif mb-2">{bundle.name}</h3>
+                      <h3 className="text-2xl font-bold text-foreground mb-2">{bundle.name}</h3>
                       <p className="text-gray-600 text-sm mb-6">
                         Includes: {Array.isArray(bundle.products) ? bundle.products.join(', ') : bundle.products}
                       </p>
@@ -332,20 +316,20 @@ export default async function Home() {
       )}
 
       {/* About Quick Links */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
+      <section className="py-14 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-7xl mx-auto">
           <div className="max-w-2xl mb-12">
             <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
               <Sparkles className="w-4 h-4" />
               About Us
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Our Story</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Our Story</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {aboutLinks.map((link) => (
               <Link key={link.title} href={link.href} className="group">
                 <Card className="h-full p-6">
-                  <h3 className="text-xl font-bold text-foreground font-serif mb-2 group-hover:text-primary transition-colors">
+                  <h3 className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                     {link.title}
                   </h3>
                   <p className="text-sm text-gray-600">{link.desc}</p>
@@ -357,7 +341,7 @@ export default async function Home() {
       </section>
 
       {/* Value Proposition */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted">
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-muted">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {valueProps.map((prop) => (
@@ -365,7 +349,7 @@ export default async function Home() {
                 <div className="w-14 h-14 mx-auto mb-5 bg-primary rounded-2xl flex items-center justify-center text-white">
                   <prop.icon className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground font-serif mb-1">{prop.title}</h3>
+                <h3 className="text-lg font-bold text-foreground mb-1">{prop.title}</h3>
                 <p className="text-gray-500 text-sm">{prop.desc}</p>
               </div>
             ))}
@@ -381,7 +365,7 @@ export default async function Home() {
               <MapPin className="w-4 h-4" />
               Retail
             </span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground font-serif mb-4">Retail Shops</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Retail Shops</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="p-6">
@@ -389,7 +373,7 @@ export default async function Home() {
                 <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center text-secondary">
                   <MapPin className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground font-serif">Palace Supermarkets</h3>
+                <h3 className="text-lg font-bold text-foreground">Palace Supermarkets</h3>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {['Spintex', 'Labone', 'Adenta', 'Tema'].map((branch) => (
@@ -405,7 +389,7 @@ export default async function Home() {
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
                   <Clock className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground font-serif">Shop Hours</h3>
+                <h3 className="text-lg font-bold text-foreground">Shop Hours</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
@@ -423,9 +407,9 @@ export default async function Home() {
       </section>
 
       {/* CTA — WhatsApp */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#1F5E43] text-white">
+      <section className="py-14 px-4 sm:px-6 lg:px-8 bg-[#1F5E43] text-white">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4 font-serif">Questions? We&apos;re a chat away.</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Questions? We&apos;re a chat away.</h2>
           <p className="text-lg text-white/80 mb-8 max-w-2xl mx-auto">
             Message us on WhatsApp for product advice, orders, or delivery questions — we reply personally.
           </p>

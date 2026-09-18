@@ -124,7 +124,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
@@ -132,7 +132,7 @@ export default function CheckoutPage() {
             <Sparkles className="w-4 h-4" />
             Secure Checkout
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             Complete Your Order
           </h1>
         </div>
@@ -146,7 +146,7 @@ export default function CheckoutPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
                     <User className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground font-serif">Customer & Shipping Details</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Customer & Shipping Details</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -262,13 +262,13 @@ export default function CheckoutPage() {
                   <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary-dark rounded-2xl flex items-center justify-center shadow-lg shadow-secondary/20">
                     <Shield className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground font-serif">Order Items ({getTotalItems()})</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Order Items ({getTotalItems()})</h2>
                 </div>
                 <div className="space-y-4">
                   {items.map((item) => (
                     <div key={item.id} className="flex justify-between items-center py-4 border-b border-border last:border-0">
                       <div>
-                        <p className="font-bold text-lg text-foreground font-serif">{item.name}</p>
+                        <p className="font-bold text-lg text-foreground">{item.name}</p>
                         <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                       </div>
                       <p className="text-xl font-bold text-primary">₵{(item.price * item.quantity).toFixed(2)}</p>
@@ -291,7 +291,7 @@ export default function CheckoutPage() {
               <CardContent className="p-8">
                 <div className="flex items-center gap-2 mb-6">
                   <Shield className="w-5 h-5 text-secondary" />
-                  <h2 className="text-xl font-bold text-foreground font-serif">Order Summary</h2>
+                  <h2 className="text-xl font-bold text-foreground">Order Summary</h2>
                 </div>
 
                 <div className="space-y-4 mb-6">

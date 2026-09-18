@@ -120,14 +120,14 @@ function TrackOrderContent() {
   const isCancelled = order?.status === 'cancelled' || order?.status === 'refunded';
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-3xl mx-auto">
         <div className="mb-10 text-center">
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary uppercase tracking-widest mb-3">
             <Sparkles className="w-4 h-4" />
             Order Tracking
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             Track Your Order
           </h1>
           <p className="text-gray-600">
@@ -202,7 +202,7 @@ function TrackOrderContent() {
               <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
                 <div>
                   <p className="text-sm text-gray-500">Order Number</p>
-                  <p className="text-2xl font-bold text-foreground font-serif">
+                  <p className="text-2xl font-bold text-foreground">
                     {order.order_number}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
@@ -368,7 +368,7 @@ export default function TrackOrderPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center py-16 px-4 bg-background">
+        <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
         </div>
       }

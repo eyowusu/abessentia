@@ -88,11 +88,11 @@ function CheckoutSuccessContent() {
 
   if (!reference) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16 px-4 bg-background">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
         <Card className="max-w-lg w-full text-center p-8 md:p-12 border-primary/10">
           <CardContent className="p-0">
             <AlertCircle className="w-16 h-16 mx-auto mb-6 text-red-500" />
-            <h1 className="text-2xl font-bold text-foreground font-serif mb-4">Invalid Payment Link</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-4">Invalid Payment Link</h1>
             <p className="text-gray-600 mb-8">No payment reference was found. Please try your order again.</p>
             <Link href="/cart">
               <Button size="lg">Return to Cart</Button>
@@ -104,13 +104,13 @@ function CheckoutSuccessContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-16 px-4 bg-background">
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
       <Card className="max-w-lg w-full text-center p-8 md:p-12 border-primary/10">
         <CardContent className="p-0">
           {status === 'verifying' && (
             <>
               <Loader2 className="w-12 h-12 mx-auto mb-6 text-primary animate-spin" />
-              <h1 className="text-2xl font-bold text-foreground font-serif mb-4">Confirming Payment...</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-4">Confirming Payment...</h1>
               <p className="text-gray-600">Please wait while we verify your payment and create your order.</p>
             </>
           )}
@@ -125,7 +125,7 @@ function CheckoutSuccessContent() {
                 <Sparkles className="w-4 h-4" />
                 Success
               </span>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground font-serif mb-4">Order Confirmed!</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Order Confirmed!</h1>
 
               <p className="text-gray-600 mb-4">
                 Thank you for your purchase. Your payment has been received and your order is being processed.
@@ -146,7 +146,7 @@ function CheckoutSuccessContent() {
               )}
 
               <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 mb-8 text-left">
-                <h3 className="font-bold text-foreground font-serif mb-4">What&apos;s Next?</h3>
+                <h3 className="font-bold text-foreground mb-4">What&apos;s Next?</h3>
                 <ul className="space-y-3 text-sm text-gray-600">
                   <li className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 mt-2 bg-primary rounded-full flex-shrink-0" />
@@ -175,7 +175,7 @@ function CheckoutSuccessContent() {
                   bare "failed" makes them think their money vanished, so state plainly
                   that the payment went through and give them the reference to quote. */}
               <AlertCircle className="w-16 h-16 mx-auto mb-6 text-amber-500" />
-              <h1 className="text-2xl font-bold text-foreground font-serif mb-4">
+              <h1 className="text-2xl font-bold text-foreground mb-4">
                 Payment Received &ndash; Order Processing Delayed
               </h1>
               <p className="text-gray-700 mb-4">
@@ -211,7 +211,7 @@ function CheckoutSuccessContent() {
           {status === 'refunded' && (
             <>
               <AlertCircle className="w-16 h-16 mx-auto mb-6 text-blue-500" />
-              <h1 className="text-2xl font-bold text-foreground font-serif mb-4">
+              <h1 className="text-2xl font-bold text-foreground mb-4">
                 Order Could Not Be Completed
               </h1>
               <p className="text-gray-700 mb-4">
@@ -271,7 +271,7 @@ function CheckoutSuccessContent() {
 
 export default function CheckoutSuccessPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center py-16 px-4 bg-background"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>}>
       <CheckoutSuccessContent />
     </Suspense>
   );

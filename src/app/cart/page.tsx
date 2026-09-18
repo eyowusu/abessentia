@@ -64,13 +64,13 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center py-16 px-4 bg-background">
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
         <Card className="max-w-md w-full text-center p-12">
           <CardContent className="p-0">
             <div className="w-24 h-24 mx-auto mb-6 bg-primary/10 rounded-full flex items-center justify-center">
               <ShoppingBag className="w-12 h-12 text-primary" />
             </div>
-            <h2 className="text-3xl font-bold mb-3 text-foreground font-serif">Your cart is empty</h2>
+            <h2 className="text-3xl font-bold mb-3 text-foreground">Your cart is empty</h2>
             <p className="text-gray-600 mb-8">Add some products to get started on your shopping journey.</p>
             <Button onClick={() => router.push('/products')} size="lg">
               Browse Products
@@ -83,7 +83,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-12">
@@ -91,7 +91,7 @@ export default function CartPage() {
             <Sparkles className="w-4 h-4" />
             Shopping Cart
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground font-serif mb-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
             Your Cart ({getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'})
           </h1>
           <p className="text-gray-600">Review your items before checkout.</p>
@@ -131,7 +131,7 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-xl mb-2 text-foreground font-serif line-clamp-1">{item.name}</h3>
+                      <h3 className="font-bold text-xl mb-2 text-foreground line-clamp-1">{item.name}</h3>
                       <p className="text-primary font-bold text-2xl mb-4">₵{item.price.toFixed(2)}</p>
 
                       <div className="flex items-center gap-4">
@@ -188,7 +188,7 @@ export default function CartPage() {
               <CardContent className="p-8">
                 <div className="flex items-center gap-2 mb-6">
                   <Shield className="w-5 h-5 text-secondary" />
-                  <h2 className="text-xl font-bold text-foreground font-serif">Order Summary</h2>
+                  <h2 className="text-xl font-bold text-foreground">Order Summary</h2>
                 </div>
 
                 <div className="space-y-4 mb-6">

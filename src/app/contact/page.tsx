@@ -39,7 +39,7 @@ export default function ContactPage() {
   ];
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-16">
@@ -47,9 +47,9 @@ export default function ContactPage() {
             <Sparkles className="w-4 h-4" />
             Get In Touch
           </span>
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground font-serif mb-6">Keep In Touch with Us</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            We&apos;re talking about clean beauty gift sets, of course – and we&apos;ve got a bouquet of beauties for yourself or someone you love.
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-4">Get in touch</h1>
+          <p className="text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Questions about products, orders or delivery? Send us a message — it opens WhatsApp with everything ready to go.
           </p>
         </div>
 
@@ -61,7 +61,7 @@ export default function ContactPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
                   <Mail className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground font-serif">Get in Touch</h2>
+                <h2 className="text-2xl font-bold text-foreground">Get in Touch</h2>
               </div>
 
               <div className="space-y-6">
@@ -71,7 +71,7 @@ export default function ContactPage() {
                       <div className="text-white">{item.icon}</div>
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg text-foreground font-serif mb-1">{item.title}</h3>
+                      <h3 className="font-bold text-lg text-foreground mb-1">{item.title}</h3>
                       {item.lines.map((line, i) => (
                         <p key={i} className={i === item.lines.length - 1 && item.title === 'Email' ? 'text-sm text-gray-500' : 'text-gray-600'}>
                           {line}
@@ -87,7 +87,7 @@ export default function ContactPage() {
               <CardContent className="p-8">
                 <div className="flex items-center gap-3 mb-6">
                   <Clock className="w-6 h-6 text-primary" />
-                  <h3 className="font-bold text-xl text-foreground font-serif">Shop Hours</h3>
+                  <h3 className="font-bold text-xl text-foreground">Shop Hours</h3>
                 </div>
                 <div className="space-y-4 text-gray-700">
                   <div className="flex justify-between items-center py-3 border-b border-border/50">
@@ -110,7 +110,7 @@ export default function ContactPage() {
                 <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary-dark rounded-xl flex items-center justify-center shadow-lg shadow-secondary/20">
                   <Send className="w-6 h-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground font-serif">Send us a Message</h2>
+                <h2 className="text-2xl font-bold text-foreground">Send us a Message</h2>
               </div>
 
               {sent && (

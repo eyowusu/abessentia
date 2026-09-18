@@ -65,7 +65,7 @@ export default async function ProductDetailPage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-background">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-8" aria-label="Breadcrumb">
@@ -86,7 +86,7 @@ export default async function ProductDetailPage({ params }: Props) {
         {/* Related products */}
         {fallbackRelated.length > 0 && (
           <section className="mt-24">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground font-serif mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
               You may also like
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

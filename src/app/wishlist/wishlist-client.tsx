@@ -45,7 +45,7 @@ export default function WishlistClient({ products }: { products: CatalogueProduc
     <div className="min-h-screen bg-background">
       <div className="bg-muted/50 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-foreground font-serif flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Heart className="w-7 h-7 text-red-500 fill-red-500" />
             Wishlist
           </h1>
@@ -59,9 +59,9 @@ export default function WishlistClient({ products }: { products: CatalogueProduc
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {wished.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="text-center py-14">
             <Heart className="w-16 h-16 text-gray-200 mx-auto mb-6" />
-            <h2 className="text-xl font-bold text-foreground font-serif mb-2">Your wishlist is empty</h2>
+            <h2 className="text-xl font-bold text-foreground mb-2">Your wishlist is empty</h2>
             <p className="text-muted-foreground mb-8 max-w-md mx-auto">
               Tap the heart on any product to save it here for later.
             </p>
