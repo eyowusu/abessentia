@@ -87,13 +87,13 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
           </Card>
         )}
 
-        <div className="flex items-center gap-3 bg-muted rounded-2xl p-4 w-fit">
-          <Shield className="w-5 h-5 text-secondary" />
-          <span className="text-gray-600">Availability:</span>
-          <span className={outOfStock ? 'text-red-600 font-bold' : 'text-secondary font-bold'}>
-            {outOfStock ? 'Out of stock' : `${product.stock} in stock`}
-          </span>
-        </div>
+        {outOfStock && (
+          <div className="flex items-center gap-3 bg-muted rounded-2xl p-4 w-fit">
+            <Shield className="w-5 h-5 text-secondary" />
+            <span className="text-gray-600">Availability:</span>
+            <span className="text-red-600 font-bold">Out of stock</span>
+          </div>
+        )}
 
         <div className="flex items-center gap-4">
           <span className="text-foreground font-semibold">Quantity</span>
