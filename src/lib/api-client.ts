@@ -9,6 +9,24 @@ const asNumber = (value: unknown): number | undefined => {
   return undefined;
 };
 
+type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock';
+
+/**
+ * Read PayGlobe's availability band, falling back to the quantity for older responses
+ * that predate `stock_status`.
+ */
+const normalizeStockStatus = (
+  p: Record<string, unknown> | null | undefined
+): StockStatus => {
+  const raw = p?.stock_status;
+  if (raw === 'in_stock' || raw === 'low_stock' || raw === 'out_of_stock') {
+    return raw;
+  }
+  const quantity = Number(p?.available_quantity ?? p?.stock_quantity ?? 0);
+  if (!(quantity > 0)) return 'out_of_stock';
+  return p?.is_low_stock ? 'low_stock' : 'in_stock';
+};
+
 const normalizeProduct = (product: unknown) => {
   const p = product as Record<string, unknown> | null | undefined;
   return {
@@ -18,7 +36,11 @@ const normalizeProduct = (product: unknown) => {
     description: asString(p?.description),
     image: asString(p?.image_url || p?.thumbnail_url || p?.image),
     category: asString(p?.category_name || p?.category),
-    stock: Number(p?.stock_quantity ?? 0),
+    // Units purchasable now, not the merchant's real inventory: PayGlobe caps the
+    // figure it publishes. available_quantity is the current field name,
+    // stock_quantity the deprecated alias carrying the same value.
+    stock: Number(p?.available_quantity ?? p?.stock_quantity ?? 0),
+    stockStatus: normalizeStockStatus(p),
     rating: asNumber(p?.rating),
     isAvailable: Boolean(p?.is_available ?? true),
     createdAt: asString(p?.created_at),

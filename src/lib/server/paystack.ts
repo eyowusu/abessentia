@@ -137,7 +137,7 @@ export interface RefundResult {
 
 export interface FulfillResult {
   success: boolean;
-  status: 'succeeded' | 'not_paid' | 'error' | 'refunded';
+  status: 'succeeded' | 'not_paid' | 'error' | 'refunded' | 'foreign';
   order_number?: string | null;
   order_id?: string | null;
   reference: string;
@@ -154,23 +154,119 @@ export interface FulfillOptions {
   autoRefund?: boolean;
 }
 
+export interface TransactionListItem {
+  reference: string;
+  status: string;
+  amount: number;
+  currency: string;
+  metadata?: { source?: string; external_order_id?: string } | null;
+  paid_at?: string;
+}
+
+/**
+ * Page through successful transactions on the merchant's Paystack account.
+ *
+ * Used by the reconciliation sweep (`/api/paystack/reconcile`), which is the backstop
+ * for the one gap webhooks cannot close: if Paystack exhausts its own retry window
+ * while PayGlobe is unreachable and the customer has closed their browser, a paid
+ * charge would otherwise exist only as a log line. Listing successes and re-running
+ * fulfillment for each is safe because PayGlobe deduplicates by external_order_id.
+ *
+ * Bounded deliberately: this is a safety net, not an export tool, so it refuses to
+ * page forever on a busy account.
+ */
+export async function listSuccessfulTransactions(
+  since: Date,
+  maxPages = 10
+): Promise<TransactionListItem[]> {
+  const out: TransactionListItem[] = [];
+
+  for (let page = 1; page <= maxPages; page++) {
+    const res = await axios.get(`${PAYSTACK_BASE}/transaction`, {
+      headers: { Authorization: `Bearer ${getSecretKey()}` },
+      params: {
+        status: 'success',
+        from: since.toISOString(),
+        perPage: 50,
+        page,
+      },
+      timeout: 30000,
+    });
+
+    const batch = (res.data?.data || []) as TransactionListItem[];
+    out.push(...batch);
+
+    const meta = res.data?.meta as { pageCount?: number } | undefined;
+    if (batch.length < 50 || (meta?.pageCount && page >= meta.pageCount)) {
+      break;
+    }
+  }
+
+  return out;
+}
+
 function isAxiosErrorWithResponse(error: unknown): error is {
   message: string;
-  response: { status: number; data?: { message?: string; error?: string; detail?: string } };
+  response: {
+    status: number;
+    data?: {
+      message?: string;
+      error?: string;
+      detail?: string;
+      code?: string;
+      retryable?: boolean;
+    };
+  };
 } {
   return axios.isAxiosError(error) && error.response !== undefined;
 }
 
-function isNonRetryableError(error: unknown): boolean {
-  if (isAxiosErrorWithResponse(error)) {
-    const status = error.response.status;
-    // 408 / 429 are transient; anything else 4xx from PayGlobe is a business rule failure.
-    if (status === 408 || status === 429) return false;
+/**
+ * HTTP statuses from PayGlobe that mean "ask again shortly", not "give up".
+ *
+ * 409 is the important one. PayGlobe answers 409 + code 'order_in_flight' when a
+ * concurrent request (typically the webhook and the success page arriving together)
+ * is already recording this exact order. Treating that as final used to refund a
+ * customer whose order was about to be recorded correctly, which is the worst
+ * possible outcome: they lose the goods AND the merchant loses the sale, over a
+ * race that resolved itself a second later.
+ */
+const RETRYABLE_STATUSES = new Set([408, 409, 425, 429]);
+
+/**
+ * Decide whether a failed recording attempt is permanent.
+ *
+ * Only a permanent failure may trigger a refund, so this errs towards "retryable":
+ * a wrongly-retried order is recovered by the next webhook delivery, whereas a
+ * wrongly-refunded order needs a human, an apology, and a second payment.
+ */
+// Exported for tests: this single predicate is where the refund decision lives, and
+// every branch of it moves real money.
+export function isNonRetryableError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    // No response at all: DNS failure, connection refused, request timeout. The call
+    // may never have reached PayGlobe, so nothing about it can be "permanent" -
+    // treating a network blip as final is how a 30-second deploy ends up refunding
+    // a paying customer whose order was about to record perfectly well.
+    if (!error.response) return false;
+
+    const { status, data } = error.response;
+
+    // An explicit signal from PayGlobe always wins over status-code guesswork.
+    if (data?.retryable === true) return false;
+
+    if (RETRYABLE_STATUSES.has(status)) return false;
+    // Everything else in the 4xx range is a business rule we cannot satisfy by asking
+    // again (unknown product, amount mismatch, reference already consumed).
     if (status >= 400 && status < 500) return true;
+    // 5xx is PayGlobe having a bad moment; the webhook will redeliver.
     return false;
   }
-  // A plain Error thrown before the PayGlobe call means the inputs are bad, not the network.
-  return error instanceof Error;
+  // A plain Error thrown before the PayGlobe call (e.g. missing PAYGLOBE_API_KEY).
+  // Still not grounds for a refund: the cause can be fixed within Paystack's webhook
+  // retry window, and a refund cannot be un-sent. The only thing that may refund is
+  // an actual HTTP response telling us the request itself can never succeed.
+  return false;
 }
 
 function formatError(error: unknown): string {
@@ -302,6 +398,19 @@ export async function fulfillFromReference(
   }
 
   const meta = tx.metadata;
+
+  // Only ever act on transactions this storefront created. Ours are marked
+  // metadata.source === 'ab_essentia' and carry an 'abess-' reference prefix.
+  // Everything else on this Paystack account - a manual payment link, an invoice,
+  // another sales channel - is not ours to refund or record. Before this gate, a
+  // foreign charge.success hit this code path, failed the metadata check, and was
+  // auto-REFUNDED: the merchant would watch unrelated payments arrive and vanish.
+  const isOurs =
+    meta?.source === 'ab_essentia' || reference.startsWith('abess-');
+  if (!isOurs) {
+    return { success: false, status: 'foreign', reference };
+  }
+
   if (!meta || !meta.external_order_id || !Array.isArray(meta.items) || meta.items.length === 0) {
     return handleFulfillmentFailure(
       reference,

@@ -11,6 +11,8 @@ import {
 import { initializeTransaction, type PaystackOrderMetadata } from '@/lib/server/paystack';
 import { resolveCallbackUrl, withQueryParam } from '@/lib/server/site';
 import { quoteShipping } from '@/lib/shipping';
+import { OrderLimitError } from '@/lib/order-limits';
+import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 /**
  * Initialize a Paystack payment for an AB Essentia order.
@@ -21,12 +23,25 @@ import { quoteShipping } from '@/lib/shipping';
  * the success callback or the webhook, without depending on the browser.
  */
 export async function POST(request: NextRequest) {
+  // Throttle FIRST, before any PayGlobe call. This endpoint reserves real stock, so an
+  // unthrottled caller can hold inventory off the shelf without ever paying. Doing this
+  // ahead of validation also keeps a flood from burning the shared PayGlobe API key's
+  // rate limit, which genuine customers depend on.
+  const limit = rateLimit(
+    request,
+    'checkout',
+    RATE_LIMITS.checkout.limit,
+    RATE_LIMITS.checkout.windowSeconds
+  );
+  if (!limit.ok) {
+    return rateLimitedResponse(limit);
+  }
+
   try {
     const body = await request.json();
 
     const {
       email,
-      currency = 'GHS',
       items,
       customer_name,
       customer_phone,
@@ -38,6 +53,14 @@ export async function POST(request: NextRequest) {
       shipping_phone,
       callback_url,
     } = body ?? {};
+
+    // Currency is decided HERE, never by the request body. The amount is computed in
+    // the store's currency (GHS) from PayGlobe prices; if a caller could set the
+    // charge currency independently, the minor units would still match every amount
+    // check while the real value differed wildly - NGN 100 (~GH₵0.70) would record a
+    // GH₵100 order as fully paid. PayGlobe also enforces currency == store.currency
+    // on its side, so this is belt and the braces live there.
+    const currency = 'GHS';
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -153,6 +176,20 @@ export async function POST(request: NextRequest) {
       shipping_cost: 0,
     });
   } catch (error: unknown) {
+    // The basket breaches a purchase ceiling. A plain 400 with the reason, since this is
+    // the customer's input to correct - and nothing has been reserved or charged.
+    if (error instanceof OrderLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          limit: error.limit,
+          product_id: error.productId,
+        },
+        { status: 400 }
+      );
+    }
+
     // Stock ran out while the customer was filling in the form. This is an expected
     // outcome, not a server fault, and the customer has NOT been charged.
     if (error instanceof StockUnavailableError) {

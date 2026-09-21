@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 const PAYGLOBE_API_URL = process.env.NEXT_PUBLIC_PAYGLOBE_API_URL || 'https://api.payglobe.net';
 const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID || '2';
@@ -8,6 +9,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const limit = rateLimit(request, 'catalogue', RATE_LIMITS.catalogue.limit, RATE_LIMITS.catalogue.windowSeconds);
+  if (!limit.ok) {
+    return rateLimitedResponse(limit);
+  }
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);

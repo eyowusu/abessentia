@@ -31,6 +31,20 @@ export async function POST(request: NextRequest) {
 
   // Always acknowledge receipt quickly; only act on successful charges.
   if (event?.event !== 'charge.success') {
+    // Disputes and refunds move money backwards. They are resolved manually in the
+    // Paystack dashboard, but a silent chargeback leaves the order 'paid' in
+    // PayGlobe while the money is gone - so at minimum these must be loud in logs
+    // where an alert can find them.
+    if (
+      typeof event?.event === 'string' &&
+      (event.event.startsWith('charge.dispute') || event.event.startsWith('refund'))
+    ) {
+      console.error(
+        'PAYSTACK_MONEY_REVERSAL event=%s reference=%s - reconcile this order manually',
+        event.event,
+        event?.data?.reference
+      );
+    }
     return NextResponse.json({ status: 'ignored' });
   }
 
@@ -45,6 +59,13 @@ export async function POST(request: NextRequest) {
     // non-retryable failures means PayGlobe never has to touch the payout, but the
     // customer does not have to wait for a manual refund either.
     const result = await fulfillFromReference(reference, { autoRefund: true });
+
+    if (result.status === 'foreign') {
+      // A successful charge that did not come from this storefront (manual payment
+      // link, invoice, another channel sharing the account). Not ours to touch -
+      // acknowledge so Paystack stops retrying, but never refund or record it.
+      return NextResponse.json({ status: 'ignored', reason: 'not an ab-essentia transaction' });
+    }
 
     if (result.status === 'refunded') {
       console.error(

@@ -21,7 +21,14 @@ export interface CatalogueProduct {
   description?: string;
   image?: string;
   category?: string;
+  /**
+   * Units this shopper may add to their basket, NOT the merchant's true inventory.
+   * PayGlobe caps the figure it publishes so the catalogue cannot be polled to read
+   * real stock levels, so treat this only as "how many can I buy right now".
+   */
   stock: number;
+  /** Coarse availability band from PayGlobe; preferred over comparing `stock`. */
+  stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
   rating?: number;
   isAvailable: boolean;
   createdAt?: string;
@@ -44,6 +51,22 @@ const asNumber = (v: unknown): number | undefined => {
   return undefined;
 };
 
+/**
+ * Read PayGlobe's availability band, falling back to the quantity for older responses
+ * that predate `stock_status`.
+ */
+function normalizeStockStatus(
+  r: Record<string, unknown> | null | undefined
+): CatalogueProduct['stockStatus'] {
+  const raw = r?.stock_status;
+  if (raw === 'in_stock' || raw === 'low_stock' || raw === 'out_of_stock') {
+    return raw;
+  }
+  const quantity = Number(r?.available_quantity ?? r?.stock_quantity ?? 0);
+  if (!(quantity > 0)) return 'out_of_stock';
+  return r?.is_low_stock ? 'low_stock' : 'in_stock';
+}
+
 function normalizeProduct(p: unknown): CatalogueProduct {
   const r = p as Record<string, unknown> | null | undefined;
   return {
@@ -53,7 +76,11 @@ function normalizeProduct(p: unknown): CatalogueProduct {
     description: asString(r?.description),
     image: asString(r?.image_url || r?.thumbnail_url || r?.image),
     category: asString(r?.category_name || r?.category),
-    stock: Number(r?.stock_quantity ?? 0),
+    // available_quantity is the current name; stock_quantity is PayGlobe's deprecated
+    // alias carrying the same capped value. Both are read so the storefront works
+    // against either version of the API.
+    stock: Number(r?.available_quantity ?? r?.stock_quantity ?? 0),
+    stockStatus: normalizeStockStatus(r),
     rating: asNumber(r?.rating),
     isAvailable: Boolean(r?.is_available ?? true),
     createdAt: asString(r?.created_at),

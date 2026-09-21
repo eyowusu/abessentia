@@ -16,8 +16,11 @@ export default function ProductCard({ product }: { product: CatalogueProduct }) 
   // avoid a server/client markup mismatch.
   const mounted = useMounted();
 
-  const outOfStock = !product.stock || product.stock <= 0;
-  const lowStock = !outOfStock && product.stock <= 3;
+  // Use PayGlobe's band rather than comparing the quantity: the published figure is
+  // capped for disclosure, so a threshold check here would be reasoning about a number
+  // that is deliberately not the real stock level.
+  const outOfStock = product.stockStatus === 'out_of_stock' || !product.stock;
+  const lowStock = !outOfStock && product.stockStatus === 'low_stock';
 
   return (
     <div className="group bg-white rounded-2xl border border-[#E7E5E4] overflow-hidden hover:shadow-md transition-shadow">

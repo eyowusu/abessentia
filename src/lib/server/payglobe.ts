@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { assertWithinOrderLimits } from '../order-limits';
 
 /**
  * Server-only helpers for talking to PayGlobe.
@@ -69,7 +70,14 @@ async function fetchPublicProduct(productId: number) {
     name: String(p?.name ?? `Product ${productId}`),
     price,
     isAvailable: Boolean(p?.is_available ?? true),
-    stock: Number(p?.stock_quantity ?? 0),
+    // Purchasable units, capped by PayGlobe so the catalogue cannot be polled for real
+    // inventory. `available_quantity` is the current field; `stock_quantity` is the
+    // deprecated alias carrying the same capped value.
+    //
+    // This is only a courtesy pre-check to fail fast and give the shopper a useful
+    // message - reserveStock() remains the authority on whether the units exist, so a
+    // capped figure here cannot oversell anything.
+    stock: Number(p?.available_quantity ?? p?.stock_quantity ?? 0),
   };
 }
 
@@ -138,10 +146,9 @@ export async function priceOrder(items: OrderItemInput[]): Promise<PricedOrder> 
     throw new Error('At least one order item is required');
   }
 
-  const priced: AuthoritativeItem[] = [];
-  let subtotal = 0;
-
-  for (const item of items) {
+  // Normalise BEFORE checking the ceilings, so the limits are applied to integers we
+  // have actually validated rather than to whatever the client sent.
+  const normalized = items.map((item) => {
     const productId = Number(item.product_id);
     const quantity = Number(item.quantity);
     if (!Number.isInteger(productId) || productId <= 0) {
@@ -150,6 +157,21 @@ export async function priceOrder(items: OrderItemInput[]): Promise<PricedOrder> 
     if (!Number.isInteger(quantity) || quantity <= 0) {
       throw new Error(`Invalid quantity for product ${productId}`);
     }
+    return { product_id: productId, quantity };
+  });
+
+  // Enforced here rather than in the route because this is the one authoritative path
+  // every priced order goes through; a future checkout entry point cannot forget it.
+  // Without a ceiling, a single request can hold a product's whole stock hostage for the
+  // reservation TTL - see order-limits.ts.
+  assertWithinOrderLimits(normalized);
+
+  const priced: AuthoritativeItem[] = [];
+  let subtotal = 0;
+
+  for (const item of normalized) {
+    const productId = item.product_id;
+    const quantity = item.quantity;
 
     const product = await fetchPublicProduct(productId);
     if (!product.isAvailable) {

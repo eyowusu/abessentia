@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { useMounted } from '@/lib/use-mounted';
+import { MAX_QUANTITY_PER_LINE } from '@/lib/order-limits';
 import type { CatalogueProduct } from '@/lib/server/catalogue';
 
 const WHATSAPP_URL = (product: CatalogueProduct) =>
@@ -21,7 +22,13 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
   const wished = useWishlistStore((s) => s.has(product.id));
   const mounted = useMounted();
 
-  const outOfStock = product.stock <= 0;
+  const outOfStock = product.stockStatus === 'out_of_stock' || product.stock <= 0;
+
+  // The stepper must not let a shopper build a basket the server will reject. The ceiling
+  // is whichever binds first: what can be bought at all, or the per-item purchase limit
+  // enforced authoritatively in lib/order-limits.ts.
+  const maxQuantity = Math.max(1, Math.min(product.stock, MAX_QUANTITY_PER_LINE));
+  const atMaxQuantity = quantity >= maxQuantity;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
@@ -108,14 +115,22 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
             </button>
             <span className="px-6 py-3 font-bold text-xl min-w-[80px] text-center">{quantity}</span>
             <button
-              onClick={() => setQuantity(quantity + 1)}
+              onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
               className="px-5 py-3 hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-bold text-lg"
-              disabled={quantity >= product.stock}
+              disabled={atMaxQuantity}
               aria-label="Increase quantity"
             >
               <Plus className="w-4 h-4" />
             </button>
           </div>
+          {/* Say why the button stopped working, rather than leaving a dead control. */}
+          {atMaxQuantity && !outOfStock && (
+            <span className="text-sm text-gray-500">
+              {maxQuantity === MAX_QUANTITY_PER_LINE
+                ? `Maximum ${MAX_QUANTITY_PER_LINE} per order`
+                : `Only ${maxQuantity} available`}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">

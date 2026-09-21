@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requestCustomerAccessCode } from '@/lib/server/payglobe';
+import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -10,6 +11,19 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * this endpoint would reveal which emails belong to customers.
  */
 export async function POST(request: NextRequest) {
+  // This endpoint sends mail to a caller-supplied address. PayGlobe rate-limits per
+  // email, which does not stop one host cycling through many addresses and using the
+  // shop as a spam relay against its own sending reputation. Limit by origin too.
+  const limit = rateLimit(
+    request,
+    'request-code',
+    RATE_LIMITS.requestCode.limit,
+    RATE_LIMITS.requestCode.windowSeconds
+  );
+  if (!limit.ok) {
+    return rateLimitedResponse(limit);
+  }
+
   try {
     const body = await request.json();
     const email = typeof body?.email === 'string' ? body.email.trim() : '';

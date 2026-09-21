@@ -101,6 +101,19 @@ export default function CheckoutPage() {
           `${data?.error || 'An item in your cart just sold out.'} ` +
             `You have not been charged. Please adjust your cart and try again.`
         );
+      } else if (axios.isAxiosError(err) && err.response?.status === 429) {
+        // Throttled. Say how long to wait, otherwise the customer just keeps clicking
+        // and digs the hole deeper.
+        const data = err.response.data as { retry_after?: number };
+        const seconds = Number(data?.retry_after) || 60;
+        const wait =
+          seconds >= 60
+            ? `${Math.ceil(seconds / 60)} minute${Math.ceil(seconds / 60) === 1 ? '' : 's'}`
+            : `${seconds} seconds`;
+        setError(
+          `Too many checkout attempts from this connection. You have not been charged. ` +
+            `Please wait about ${wait} and try again, or contact us at info@abessentiagh.com.`
+        );
       } else {
         const message =
           axios.isAxiosError(err) && (err.response?.data as { error?: string })?.error
@@ -311,7 +324,12 @@ export default function CheckoutPage() {
                     {!formData.state ? (
                       <span className="text-gray-400 text-sm">Select a region</span>
                     ) : (
-                      <span className="text-secondary font-medium">Paid to rider on delivery</span>
+                      <span className="text-secondary font-medium text-right">
+                        {shipping.feeRangeLabel}
+                        <span className="block text-xs text-gray-500 font-normal">
+                          paid to rider
+                        </span>
+                      </span>
                     )}
                   </div>
                   <div className="flex justify-between text-gray-600">
@@ -319,11 +337,17 @@ export default function CheckoutPage() {
                     <span className="text-secondary font-medium">Included</span>
                   </div>
 
-                  {/* The customer must know the rider will ask for a delivery fee at
-                      the door - hiding it here guarantees a refusal on delivery. */}
+                  {/* The customer must know the rider will ask for a delivery fee at the
+                      door, AND roughly how much. "You pay the rider" alone leaves them
+                      unable to tell ₵20 from ₵120, and a courier naming an unexpected
+                      figure on the doorstep is the usual reason a paid order gets
+                      refused and sent back. */}
                   <p className="text-xs text-gray-500 bg-secondary/5 rounded-xl p-3">
-                    No delivery charge is added online. You pay the delivery fee
-                    directly to the rider when your order arrives.
+                    No delivery charge is added to this payment. You pay the delivery fee
+                    directly to the rider when your order arrives
+                    {formData.state
+                      ? ` — typically ${shipping.feeRangeLabel} for ${shipping.label.toLowerCase()}. The exact amount depends on your precise location.`
+                      : '. Select your region to see the typical amount.'}
                   </p>
 
                   <div className="border-t border-border pt-4">

@@ -224,6 +224,17 @@ PAYSTACK_SECRET_KEY=sk_live_...
 PAYGLOBE_API_KEY=...
 # Optional: only needed if the external API path differs from the default.
 # PAYGLOBE_BASE_URL=https://api.payglobe.net/api/v1/external
+
+# Required in production: guards /api/paystack/reconcile. Vercel sends this as a
+# Bearer token on cron runs (vercel.json schedules it every 30 minutes). Generate
+# with `openssl rand -hex 32`. The sweep re-runs fulfilment for any successful
+# Paystack charge whose order never reached PayGlobe - without it, that endpoint
+# stays closed and orphaned payments are only visible in logs.
+CRON_SECRET=...
+
+# Optional: how far back the sweep looks, in hours. Default 72, chosen to exceed
+# Paystack's own webhook retry window.
+# RECONCILE_LOOKBACK_HOURS=72
 ```
 
 ## PayGlobe CORS requirement

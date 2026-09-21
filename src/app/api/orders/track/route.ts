@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrderStatus } from '@/lib/server/payglobe';
+import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 /**
  * Look up an order for a customer.
@@ -10,6 +11,19 @@ import { getOrderStatus } from '@/lib/server/payglobe';
  * customers' delivery details.
  */
 export async function POST(request: NextRequest) {
+  // The order-number + email pairing is what protects other customers' addresses. That
+  // check is only as strong as the number of guesses allowed, so cap them: without this,
+  // the email requirement is brute-forceable at whatever rate the network permits.
+  const limit = rateLimit(
+    request,
+    'order-track',
+    RATE_LIMITS.orderTrack.limit,
+    RATE_LIMITS.orderTrack.windowSeconds
+  );
+  if (!limit.ok) {
+    return rateLimitedResponse(limit);
+  }
+
   try {
     const body = await request.json();
     const orderRef = typeof body?.order_ref === 'string' ? body.order_ref.trim() : '';
