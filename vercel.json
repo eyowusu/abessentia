@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/paystack/reconcile",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
