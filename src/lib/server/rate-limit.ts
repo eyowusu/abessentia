@@ -144,6 +144,8 @@ export const RATE_LIMITS = {
   catalogue: { limit: 120, windowSeconds: 600 },
   /** POST /api/coupon/validate - answering "does this code exist" should be slow. */
   couponValidate: { limit: 15, windowSeconds: 600 },
+  /** GET /api/coupon/validate - public promo status, fetched per cart/checkout view. */
+  promoStatus: { limit: 60, windowSeconds: 600 },
 } as const;
 
 /** 429 response with the headers a well-behaved client expects. */

@@ -49,3 +49,37 @@ export function resolveCoupon(code: string, now = new Date()): ResolvedCoupon | 
 export function couponDiscount(subtotal: number, percent: number): number {
   return Number(((subtotal * percent) / 100).toFixed(2));
 }
+
+export interface AutoPromo {
+  /** Whole-number percent off the order subtotal, e.g. 10 for 10%. */
+  percent: number;
+  /** Customer-facing label, e.g. "October promo". */
+  label: string;
+  /** ISO date the promo is valid through (inclusive), when configured. */
+  expiresOn?: string;
+}
+
+/**
+ * Site-wide automatic promotion - applied at checkout with no code.
+ *
+ * Configured via PROMO_AUTO_PERCENT plus optional PROMO_AUTO_EXPIRES (inclusive
+ * ISO date) and PROMO_AUTO_LABEL. Fails closed the same way coupons do: unset or
+ * malformed config means no promo. A customer-supplied coupon code takes
+ * precedence over this (callers decide precedence; the two never stack).
+ */
+export function resolveAutoPromo(now = new Date()): AutoPromo | null {
+  const raw = process.env.PROMO_AUTO_PERCENT;
+  if (!raw) return null;
+
+  const percent = Number(raw);
+  if (!Number.isFinite(percent) || percent <= 0 || percent > 100) return null;
+
+  const expires = process.env.PROMO_AUTO_EXPIRES?.trim();
+  if (expires) {
+    const expiresAt = new Date(`${expires}T23:59:59Z`);
+    if (Number.isNaN(expiresAt.getTime()) || now > expiresAt) return null;
+  }
+
+  const label = process.env.PROMO_AUTO_LABEL?.trim() || 'Promotion';
+  return { percent, label, expiresOn: expires || undefined };
+}

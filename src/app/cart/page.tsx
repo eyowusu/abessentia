@@ -21,6 +21,7 @@ export default function CartPage() {
   const [couponInput, setCouponInput] = useState('');
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [autoPromo, setAutoPromo] = useState<{ percent: number; label: string } | null>(null);
   const hasRefreshed = useRef(false);
 
   // Refresh the cart against live prices and stock once, when the page opens.
@@ -58,10 +59,24 @@ export default function CartPage() {
 
   const handleCheckout = () => router.push('/checkout');
 
+  // Site-wide promo status - public info, preview only. The server recomputes
+  // the actual discount at initiation.
+  useEffect(() => {
+    axios
+      .get('/api/coupon/validate')
+      .then((res) => res.data?.active && setAutoPromo(res.data))
+      .catch(() => {});
+  }, []);
+
   const subtotal = getTotalPrice();
   // Preview only - the server re-resolves the code and recomputes this figure at
   // checkout, so a stale or edited coupon cannot change what is actually charged.
-  const discount = coupon ? Number(((subtotal * coupon.percent) / 100).toFixed(2)) : 0;
+  // A coupon code takes precedence over the auto promo; they never stack.
+  const discount = coupon
+    ? Number(((subtotal * coupon.percent) / 100).toFixed(2))
+    : autoPromo
+      ? Number(((subtotal * autoPromo.percent) / 100).toFixed(2))
+      : 0;
   const orderTotal = Number((subtotal - discount).toFixed(2));
 
   const applyCode = async () => {
@@ -236,8 +251,16 @@ export default function CartPage() {
                     <span className="font-semibold text-foreground">GH₵{subtotal.toFixed(2)}</span>
                   </div>
 
-                  {/* Coupon box - the discount shown is a preview; the server
-                      re-resolves the code and recomputes the discount at checkout. */}
+                  {/* Auto promo + coupon box - the discount shown is a preview;
+                      the server re-resolves and recomputes it at checkout. */}
+                  {!coupon && autoPromo && discount > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                      <p className="text-sm font-semibold text-green-800">
+                        {autoPromo.label} &mdash; {autoPromo.percent}% off applied
+                      </p>
+                      <p className="text-xs text-green-700">-GH₵{discount.toFixed(2)}</p>
+                    </div>
+                  )}
                   {coupon ? (
                     <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
                       <div>

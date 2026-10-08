@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveCoupon } from '@/lib/server/coupons';
+import { resolveAutoPromo, resolveCoupon } from '@/lib/server/coupons';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 /**
@@ -35,5 +35,37 @@ export async function POST(request: NextRequest) {
     code: coupon.code,
     percent: coupon.percent,
     expires_on: coupon.expiresOn ?? null,
+  });
+}
+
+/**
+ * Report whether a site-wide auto-promo is active.
+ *
+ * The cart and checkout call this on load so the discount line can be shown
+ * before payment. It is public information by definition - the promo is meant
+ * to be advertised - and the charged amount is still recomputed in
+ * /api/paystack/initiate, so a stale response changes nothing a customer pays.
+ */
+export async function GET(request: NextRequest) {
+  const limit = rateLimit(
+    request,
+    'coupon-promo',
+    RATE_LIMITS.promoStatus.limit,
+    RATE_LIMITS.promoStatus.windowSeconds
+  );
+  if (!limit.ok) {
+    return rateLimitedResponse(limit);
+  }
+
+  const promo = resolveAutoPromo();
+  if (!promo) {
+    return NextResponse.json({ active: false });
+  }
+
+  return NextResponse.json({
+    active: true,
+    percent: promo.percent,
+    label: promo.label,
+    expires_on: promo.expiresOn ?? null,
   });
 }

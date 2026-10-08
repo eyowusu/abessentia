@@ -11,7 +11,7 @@ import {
 import { initializeTransaction, type PaystackOrderMetadata } from '@/lib/server/paystack';
 import { resolveCallbackUrl, withQueryParam } from '@/lib/server/site';
 import { quoteShipping } from '@/lib/shipping';
-import { couponDiscount, resolveCoupon } from '@/lib/server/coupons';
+import { couponDiscount, resolveAutoPromo, resolveCoupon } from '@/lib/server/coupons';
 import { OrderLimitError } from '@/lib/order-limits';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
     // full price, which would read as the coupon having been ignored.
     let discount = 0;
     let appliedCoupon: string | undefined;
+    let appliedPromo: string | undefined;
     if (typeof coupon === 'string' && coupon.trim()) {
       const resolved = resolveCoupon(coupon);
       if (!resolved) {
@@ -127,6 +128,14 @@ export async function POST(request: NextRequest) {
       }
       discount = couponDiscount(priced.subtotal, resolved.percent);
       appliedCoupon = resolved.code;
+    } else {
+      // Site-wide promo applies only when no code is used: the two must never
+      // stack into an unintended combined discount.
+      const promo = resolveAutoPromo();
+      if (promo) {
+        discount = couponDiscount(priced.subtotal, promo.percent);
+        appliedPromo = promo.label;
+      }
     }
 
     // No delivery fee is charged online - the rider collects their own fee from the
@@ -167,6 +176,7 @@ export async function POST(request: NextRequest) {
       // Carried in the transaction metadata so fulfillment can tell an intentional
       // discount from a paid-amount discrepancy.
       coupon_code: appliedCoupon,
+      promo_label: appliedPromo,
       discount_minor: Math.round(discount * 100),
       shipping_method: `standard-${shipping.zone}`,
       shipping_cost: 0,
@@ -208,6 +218,7 @@ export async function POST(request: NextRequest) {
       subtotal: priced.subtotal,
       discount,
       coupon_code: appliedCoupon ?? null,
+      promo: appliedPromo ?? null,
       shipping_cost: 0,
     });
   } catch (error: unknown) {

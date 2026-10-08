@@ -219,6 +219,7 @@ export const paymentApi = {
       subtotal: number;
       discount?: number;
       coupon_code?: string | null;
+      promo?: string | null;
       shipping_cost: number;
     };
   },

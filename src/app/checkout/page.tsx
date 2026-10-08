@@ -15,6 +15,7 @@ export default function CheckoutPage() {
   const { items, getTotalPrice, getTotalItems, coupon } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autoPromo, setAutoPromo] = useState<{ percent: number; label: string } | null>(null);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -39,11 +40,24 @@ export default function CheckoutPage() {
   // No delivery fee is charged online: the rider collects their own fee from the
   // customer in person on delivery. The zone lookup only drives the estimate shown
   // here; the order total charged through Paystack is the subtotal alone.
+  // Site-wide promo status - public info, preview only.
+  useEffect(() => {
+    axios
+      .get('/api/coupon/validate')
+      .then((res) => res.data?.active && setAutoPromo(res.data))
+      .catch(() => {});
+  }, []);
+
   const subtotal = getTotalPrice();
   const shipping = quoteShipping(formData.state);
   // Preview only - the server re-resolves the code and recomputes this figure
-  // against live PayGlobe prices at initiation.
-  const discount = coupon ? Number(((subtotal * coupon.percent) / 100).toFixed(2)) : 0;
+  // against live PayGlobe prices at initiation. A coupon takes precedence over
+  // the auto promo; they never stack.
+  const discount = coupon
+    ? Number(((subtotal * coupon.percent) / 100).toFixed(2))
+    : autoPromo
+      ? Number(((subtotal * autoPromo.percent) / 100).toFixed(2))
+      : 0;
   const orderTotal = subtotal - discount;
 
   const handlePayGlobeCheckout = async () => {
@@ -324,6 +338,12 @@ export default function CheckoutPage() {
                   {coupon && discount > 0 && (
                     <div className="flex justify-between text-green-700">
                       <span>Coupon {coupon.code} ({coupon.percent}% off)</span>
+                      <span>-GH₵{discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {!coupon && autoPromo && discount > 0 && (
+                    <div className="flex justify-between text-green-700">
+                      <span>{autoPromo.label} ({autoPromo.percent}% off)</span>
                       <span>-GH₵{discount.toFixed(2)}</span>
                     </div>
                   )}

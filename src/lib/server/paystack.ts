@@ -29,6 +29,8 @@ export interface PaystackOrderMetadata {
   /** Coupon applied at initiation, when one was used - keeps a discounted charge
    * distinguishable from a paid-amount discrepancy during reconciliation. */
   coupon_code?: string;
+  /** Label of the site-wide auto-promo applied when no coupon was used. */
+  promo_label?: string;
   discount_minor?: number;
   customer_name?: string;
   customer_email?: string;
