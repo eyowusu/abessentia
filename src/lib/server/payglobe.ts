@@ -166,14 +166,19 @@ export async function priceOrder(items: OrderItemInput[]): Promise<PricedOrder> 
   // reservation TTL - see order-limits.ts.
   assertWithinOrderLimits(normalized);
 
+  // Fetch every product in parallel rather than serially - a 20-line order would
+  // otherwise pay twenty sequential round-trips before the customer even reaches
+  // Paystack. checkCartItems already fans out the same way.
+  const products = await Promise.all(
+    normalized.map((item) => fetchPublicProduct(item.product_id))
+  );
+
   const priced: AuthoritativeItem[] = [];
   let subtotal = 0;
 
-  for (const item of normalized) {
-    const productId = item.product_id;
-    const quantity = item.quantity;
-
-    const product = await fetchPublicProduct(productId);
+  for (let i = 0; i < normalized.length; i += 1) {
+    const { product_id: productId, quantity } = normalized[i];
+    const product = products[i];
     if (!product.isAvailable) {
       throw new Error(`Product ${product.name} is not available`);
     }
@@ -523,9 +528,11 @@ export async function recordPaidOrder(input: RecordOrderInput) {
     // worth at its current prices, and flag any drift for the merchant.
     paid_amount: input.paid_amount,
     shipping_method: input.shipping_method || 'standard',
-    shipping_cost: input.shipping_cost ?? 0,
-    tax: 0,
-    tax_rate: 0,
+    // Only sent when non-zero: the PayGlobe serializer coerces these to Decimal,
+    // and on deployments without the EncryptedJSONField DjangoJSONEncoder fix a
+    // Decimal in the stored request payload crashes order recording outright.
+    // Omitting the keys yields JSON-safe int defaults server-side.
+    ...(input.shipping_cost ? { shipping_cost: input.shipping_cost } : {}),
     items: input.items.map((i) => ({
       product_id: Number(i.product_id),
       quantity: Number(i.quantity),

@@ -1,3 +1,5 @@
+import { catalogueScopeParams } from './store-scope';
+
 /**
  * Server-side catalogue fetcher for AB Essentia.
  *
@@ -11,7 +13,6 @@ const PUBLIC_BASE = (
   process.env.NEXT_PUBLIC_PAYGLOBE_API_URL || 'https://api.payglobe.net'
 ).replace(/\/$/, '');
 
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID || '2';
 const REVALIDATE = 300; // 5 minutes
 
 export interface CatalogueProduct {
@@ -96,17 +97,45 @@ function normalizeList(data: unknown): CatalogueProduct[] {
 }
 
 async function fetchJson(path: string): Promise<unknown> {
-  const url = `${PUBLIC_BASE}${path}${path.includes('?') ? '&' : '?'}store_id=${STORE_ID}`;
+  const scope = new URLSearchParams(catalogueScopeParams()).toString();
+  const url = `${PUBLIC_BASE}${path}${path.includes('?') ? '&' : '?'}${scope}`;
   const res = await fetch(url, { next: { revalidate: REVALIDATE } });
   if (!res.ok) throw new Error(`Catalogue request failed: ${res.status} ${path}`);
   return res.json();
 }
 
-export async function getProducts(pageSize = 100): Promise<CatalogueProduct[]> {
-  const data = await fetchJson(
+/**
+ * The full catalogue, following PayGlobe's pagination rather than stopping at the
+ * first page. `next` is an absolute URL upstream - only the `page` number is
+ * extracted from it, so we never follow a caller-influenced host. Bounded by
+ * maxPages so a misbehaving API cannot loop forever.
+ */
+export async function getProducts(pageSize = 100, maxPages = 10): Promise<CatalogueProduct[]> {
+  let data = await fetchJson(
     `/api/v1/merchants/public/products/?page_size=${pageSize}&include_out_of_stock=true`
   );
-  return normalizeList(data);
+
+  const results = normalizeList(data);
+  let next = (data as Record<string, unknown> | null)?.next;
+
+  for (let pages = 1; pages < maxPages && typeof next === 'string' && next; pages += 1) {
+    let pageNum: number | null = null;
+    try {
+      const param = new URL(next).searchParams.get('page');
+      pageNum = param ? Number(param) : null;
+    } catch {
+      break;
+    }
+    if (!Number.isInteger(pageNum) || pageNum === null) break;
+
+    data = await fetchJson(
+      `/api/v1/merchants/public/products/?page_size=${pageSize}&include_out_of_stock=true&page=${pageNum}`
+    );
+    results.push(...normalizeList(data));
+    next = (data as Record<string, unknown> | null)?.next;
+  }
+
+  return results;
 }
 
 export async function getProduct(id: string): Promise<CatalogueProduct | null> {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCustomerAccessCode } from '@/lib/server/payglobe';
 import { CUSTOMER_SESSION_COOKIE } from '@/lib/server/customer-session';
+import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 /**
  * Exchange the emailed code for a session.
@@ -10,6 +11,18 @@ import { CUSTOMER_SESSION_COOKIE } from '@/lib/server/customer-session';
  * page JavaScript.
  */
 export async function POST(request: NextRequest) {
+  // Throttled like the other auth endpoints: the code is six digits, so an
+  // unthrottled endpoint is a brute-force oracle against a customer's order history.
+  const limit = rateLimit(
+    request,
+    'verify-code',
+    RATE_LIMITS.verifyCode.limit,
+    RATE_LIMITS.verifyCode.windowSeconds
+  );
+  if (!limit.ok) {
+    return rateLimitedResponse(limit);
+  }
+
   try {
     const body = await request.json();
     const email = typeof body?.email === 'string' ? body.email.trim() : '';

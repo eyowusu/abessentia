@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
+import { applyCatalogueScope } from '@/lib/server/store-scope';
 
 const PAYGLOBE_API_URL = process.env.NEXT_PUBLIC_PAYGLOBE_API_URL || 'https://api.payglobe.net';
-const STORE_ID = process.env.NEXT_PUBLIC_STORE_ID || '2';
 
 export async function GET(request: NextRequest) {
   const limit = rateLimit(request, 'catalogue', RATE_LIMITS.catalogue.limit, RATE_LIMITS.catalogue.windowSeconds);
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const params = new URLSearchParams(searchParams);
     
-    // Always add store_id to scope to AB Essentia store
-    params.set('store_id', STORE_ID);
+    // Always scope to this shop's store/merchant - never let a caller widen it.
+    applyCatalogueScope(params);
     
     const url = `${PAYGLOBE_API_URL}/api/v1/merchants/public/products/categories/?${params.toString()}`;
     

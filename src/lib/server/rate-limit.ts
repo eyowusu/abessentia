@@ -126,8 +126,14 @@ export const RATE_LIMITS = {
   fulfill: { limit: 20, windowSeconds: 600 },
   /** POST /api/cart/validate - read-only, called on every cart page view. */
   cartValidate: { limit: 60, windowSeconds: 600 },
-  /** POST /api/account/request-code - sends an email to a customer-supplied address. */
+  /** POST /api/account/request-code - sends an email to a caller-supplied address. */
   requestCode: { limit: 5, windowSeconds: 900 },
+  /**
+   * POST /api/account/verify - exchanges a 6-digit email code for a session token.
+   * The code space is small enough that unlimited attempts are brute-forceable, so
+   * this must be throttled here regardless of what PayGlobe does upstream.
+   */
+  verifyCode: { limit: 10, windowSeconds: 900 },
   /** POST /api/orders/track - guessing order numbers should be slow. */
   orderTrack: { limit: 20, windowSeconds: 600 },
   /**
@@ -136,6 +142,8 @@ export const RATE_LIMITS = {
    * customers. Generous because a shopper browsing produces a burst per page.
    */
   catalogue: { limit: 120, windowSeconds: 600 },
+  /** POST /api/coupon/validate - answering "does this code exist" should be slow. */
+  couponValidate: { limit: 15, windowSeconds: 600 },
 } as const;
 
 /** 429 response with the headers a well-behaved client expects. */

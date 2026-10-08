@@ -1,0 +1,24 @@
+{
+  // Test-only emit: compiles *.test.ts (and the source files they import) to
+  // CommonJS in .test-build/ so `node --test` can run them without a bundler.
+  // CommonJS is deliberate - Node resolves extensionless relative requires, so
+  // the codebase's Next-style imports work unchanged.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "outDir": ".test-build",
+    "rootDir": "src",
+    "types": ["node"],
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": ["src/**/*.test.ts"],
+  "exclude": ["node_modules"]
+}

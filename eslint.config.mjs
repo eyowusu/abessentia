@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Compiled test output (see tsconfig.test.json) - lint the sources, not the emit.
+    ".test-build/**",
   ]),
 ]);
 

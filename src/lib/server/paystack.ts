@@ -26,6 +26,10 @@ export interface PaystackOrderMetadata {
   source: 'ab_essentia';
   expected_amount_minor: number;
   currency: string;
+  /** Coupon applied at initiation, when one was used - keeps a discounted charge
+   * distinguishable from a paid-amount discrepancy during reconciliation. */
+  coupon_code?: string;
+  discount_minor?: number;
   customer_name?: string;
   customer_email?: string;
   customer_phone?: string;

@@ -180,11 +180,12 @@ function CheckoutSuccessContent() {
               </h1>
               <p className="text-gray-700 mb-4">
                 Your payment was successful and your money is safe. We hit a problem
-                finalising your order, and our team has already been alerted.
+                finalising your order — our systems keep retrying automatically,
+                and a paid order is never abandoned.
               </p>
               <p className="text-gray-700 mb-6">
-                We will contact you shortly to confirm or refund. Please keep the
-                reference below.
+                If we cannot complete it, you will be refunded automatically. Please
+                keep the reference below.
               </p>
 
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
