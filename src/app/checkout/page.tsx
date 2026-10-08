@@ -12,7 +12,7 @@ import { GHANA_REGIONS, quoteShipping } from '@/lib/shipping';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotalPrice, getTotalItems } = useCartStore();
+  const { items, getTotalPrice, getTotalItems, coupon } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,13 +41,19 @@ export default function CheckoutPage() {
   // here; the order total charged through Paystack is the subtotal alone.
   const subtotal = getTotalPrice();
   const shipping = quoteShipping(formData.state);
-  const orderTotal = subtotal;
+  // Preview only - the server re-resolves the code and recomputes this figure
+  // against live PayGlobe prices at initiation.
+  const discount = coupon ? Number(((subtotal * coupon.percent) / 100).toFixed(2)) : 0;
+  const orderTotal = subtotal - discount;
 
   const handlePayGlobeCheckout = async () => {
     setLoading(true);
     setError(null);
 
-    const requiredFields = ['email', 'phone', 'fullName', 'address', 'city', 'state'] as const;
+    // gpsAddress is required too: the server maps it to shipping_postal_code, which
+    // is mandatory on the order. Leaving it optional here sent customers into a 400
+    // naming a field they were told they could skip.
+    const requiredFields = ['email', 'phone', 'fullName', 'address', 'city', 'state', 'gpsAddress'] as const;
     const missing = requiredFields.filter(key => !formData[key].trim());
     if (missing.length > 0) {
       setError('Please fill in all customer and delivery details.');
@@ -78,6 +84,9 @@ export default function CheckoutPage() {
         shipping_postal_code: formData.gpsAddress.trim(),
         shipping_country: 'GH',
         shipping_phone: formData.phone,
+        // Sent as a hint only; initiate re-validates the code and rejects the
+        // checkout if it is unknown or expired rather than charging full price.
+        coupon: coupon?.code,
         items: items.map(item => ({
           product_id: item.productId,
           quantity: item.quantity,
@@ -236,8 +245,7 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      GhanaPost GPS Address{' '}
-                      <span className="text-gray-400 font-normal">(optional)</span>
+                      GhanaPost GPS Address
                     </label>
                     <input
                       type="text"
@@ -246,9 +254,10 @@ export default function CheckoutPage() {
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                       placeholder="e.g. GA-183-4290"
+                      required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Helps our courier find you faster.
+                      Required — our couriers navigate by this code. Check the GhanaPostGPS app if you are unsure of yours.
                     </p>
                   </div>
                   <div className="md:col-span-2">
@@ -284,7 +293,7 @@ export default function CheckoutPage() {
                         <p className="font-bold text-lg text-foreground">{item.name}</p>
                         <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                       </div>
-                      <p className="text-xl font-bold text-primary">₵{(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-xl font-bold text-primary">GH₵{(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   ))}
                 </div>
@@ -310,8 +319,14 @@ export default function CheckoutPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'})</span>
-                    <span className="font-semibold text-foreground">₵{subtotal.toFixed(2)}</span>
+                    <span className="font-semibold text-foreground">GH₵{subtotal.toFixed(2)}</span>
                   </div>
+                  {coupon && discount > 0 && (
+                    <div className="flex justify-between text-green-700">
+                      <span>Coupon {coupon.code} ({coupon.percent}% off)</span>
+                      <span>-GH₵{discount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-gray-600">
                     <span>
                       Delivery
@@ -325,10 +340,7 @@ export default function CheckoutPage() {
                       <span className="text-gray-400 text-sm">Select a region</span>
                     ) : (
                       <span className="text-secondary font-medium text-right">
-                        {shipping.feeRangeLabel}
-                        <span className="block text-xs text-gray-500 font-normal">
-                          paid to rider
-                        </span>
+                        Paid to rider
                       </span>
                     )}
                   </div>
@@ -337,23 +349,18 @@ export default function CheckoutPage() {
                     <span className="text-secondary font-medium">Included</span>
                   </div>
 
-                  {/* The customer must know the rider will ask for a delivery fee at the
-                      door, AND roughly how much. "You pay the rider" alone leaves them
-                      unable to tell ₵20 from ₵120, and a courier naming an unexpected
-                      figure on the doorstep is the usual reason a paid order gets
-                      refused and sent back. */}
+                  {/* The customer must know a rider fee exists and is settled at the
+                      door, but the amount is the rider's own - merchant policy is not
+                      to publish a figure, so none is shown. */}
                   <p className="text-xs text-gray-500 bg-secondary/5 rounded-xl p-3">
                     No delivery charge is added to this payment. You pay the delivery fee
-                    directly to the rider when your order arrives
-                    {formData.state
-                      ? ` — typically ${shipping.feeRangeLabel} for ${shipping.label.toLowerCase()}. The exact amount depends on your precise location.`
-                      : '. Select your region to see the typical amount.'}
+                    directly to the rider when your order arrives.
                   </p>
 
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between text-2xl font-bold text-foreground">
                       <span>Total</span>
-                      <span className="text-primary">₵{orderTotal.toFixed(2)}</span>
+                      <span className="text-primary">GH₵{orderTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

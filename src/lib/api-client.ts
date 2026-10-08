@@ -206,6 +206,7 @@ export const paymentApi = {
     shipping_postal_code?: string;
     shipping_country?: string;
     shipping_phone: string;
+    coupon?: string;
     items: Array<{ product_id: string | number; quantity: number }>;
   }) => {
     const response = await axios.post('/api/paystack/initiate', data);
@@ -216,6 +217,8 @@ export const paymentApi = {
       external_order_id: string;
       amount: number;
       subtotal: number;
+      discount?: number;
+      coupon_code?: string | null;
       shipping_cost: number;
     };
   },

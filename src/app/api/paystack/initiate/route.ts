@@ -11,6 +11,7 @@ import {
 import { initializeTransaction, type PaystackOrderMetadata } from '@/lib/server/paystack';
 import { resolveCallbackUrl, withQueryParam } from '@/lib/server/site';
 import { quoteShipping } from '@/lib/shipping';
+import { couponDiscount, resolveCoupon } from '@/lib/server/coupons';
 import { OrderLimitError } from '@/lib/order-limits';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       shipping_country = 'GH',
       shipping_phone,
       callback_url,
+      coupon,
     } = body ?? {};
 
     // Currency is decided HERE, never by the request body. The amount is computed in
@@ -73,12 +75,21 @@ export async function POST(request: NextRequest) {
       shipping_postal_code,
       shipping_phone,
     };
+    // Customers see form labels, not API field names - "shipping_postal_code" in an
+    // error message means nothing to someone filling in a GhanaPost GPS box.
+    const fieldLabels: Record<string, string> = {
+      shipping_address: 'street address',
+      shipping_city: 'city',
+      shipping_state: 'region',
+      shipping_postal_code: 'GhanaPost GPS address',
+      shipping_phone: 'phone number',
+    };
     const missing = Object.entries(requiredShipping)
       .filter(([, v]) => !String(v ?? '').trim())
-      .map(([k]) => k);
+      .map(([k]) => fieldLabels[k] ?? k);
     if (missing.length > 0) {
       return NextResponse.json(
-        { error: `Missing required fields: ${missing.join(', ')}` },
+        { error: `Please provide your ${missing.join(', ')}.` },
         { status: 400 }
       );
     }
@@ -100,11 +111,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order total must be greater than zero' }, { status: 400 });
     }
 
+    // Coupon resolution happens here too, not just in /api/coupon/validate - the
+    // browser preview is advisory; this is the figure the customer is charged. An
+    // unknown or expired code rejects the checkout rather than silently charging
+    // full price, which would read as the coupon having been ignored.
+    let discount = 0;
+    let appliedCoupon: string | undefined;
+    if (typeof coupon === 'string' && coupon.trim()) {
+      const resolved = resolveCoupon(coupon);
+      if (!resolved) {
+        return NextResponse.json(
+          { error: 'That coupon code is invalid or has expired. Remove it and try again.' },
+          { status: 400 }
+        );
+      }
+      discount = couponDiscount(priced.subtotal, resolved.percent);
+      appliedCoupon = resolved.code;
+    }
+
     // No delivery fee is charged online - the rider collects their own fee from the
     // customer in person. The zone still travels with the order so the merchant knows
     // the destination band, and the customer is charged the subtotal alone.
     const shipping = quoteShipping(String(shipping_state));
-    const orderTotal = priced.subtotal;
+    const orderTotal = Number((priced.subtotal - discount).toFixed(2));
     const amountMinor = Math.round(orderTotal * 100);
 
     if (amountMinor <= 0) {
@@ -135,6 +164,10 @@ export async function POST(request: NextRequest) {
       source: 'ab_essentia',
       expected_amount_minor: amountMinor,
       currency: currency.toUpperCase(),
+      // Carried in the transaction metadata so fulfillment can tell an intentional
+      // discount from a paid-amount discrepancy.
+      coupon_code: appliedCoupon,
+      discount_minor: Math.round(discount * 100),
       shipping_method: `standard-${shipping.zone}`,
       shipping_cost: 0,
       customer_name,
@@ -173,6 +206,8 @@ export async function POST(request: NextRequest) {
       external_order_id: externalOrderId,
       amount: orderTotal,
       subtotal: priced.subtotal,
+      discount,
+      coupon_code: appliedCoupon ?? null,
       shipping_cost: 0,
     });
   } catch (error: unknown) {

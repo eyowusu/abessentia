@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { MAX_QUANTITY_PER_LINE } from './order-limits';
 
 export interface CartItem {
   id: string;
@@ -29,12 +30,22 @@ interface CartLineCheck {
   isAvailable: boolean;
 }
 
+/** A coupon the customer has applied for display. The server re-resolves the code
+ * at checkout, so this is a preview - never the charged discount. */
+export interface AppliedCoupon {
+  code: string;
+  percent: number;
+}
+
 interface CartStore {
   items: CartItem[];
+  coupon: AppliedCoupon | null;
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  applyCoupon: (coupon: AppliedCoupon) => void;
+  clearCoupon: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
   /** Apply server truth to the cart, returning what changed so it can be shown. */
@@ -80,21 +91,26 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      
+      coupon: null,
+
       addItem: (item) => {
         const quantity = Math.max(1, Math.floor(item.quantity ?? 1));
         set((state) => {
           const existingItem = state.items.find((i) => i.productId === item.productId);
           if (existingItem) {
+            // Clamp the merged line to the per-order ceiling the server enforces,
+            // so re-adding an item cannot build a basket checkout will reject.
             return {
               items: state.items.map((i) =>
                 i.productId === item.productId
-                  ? { ...i, quantity: i.quantity + quantity }
+                  ? { ...i, quantity: Math.min(i.quantity + quantity, MAX_QUANTITY_PER_LINE) }
                   : i
               ),
             };
           }
-          return { items: [...state.items, { ...item, quantity }] };
+          return {
+            items: [...state.items, { ...item, quantity: Math.min(quantity, MAX_QUANTITY_PER_LINE) }],
+          };
         });
       },
       
@@ -109,14 +125,18 @@ export const useCartStore = create<CartStore>()(
           get().removeItem(productId);
           return;
         }
+        const capped = Math.min(quantity, MAX_QUANTITY_PER_LINE);
         set((state) => ({
           items: state.items.map((i) =>
-            i.productId === productId ? { ...i, quantity } : i
+            i.productId === productId ? { ...i, quantity: capped } : i
           ),
         }));
       },
       
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], coupon: null }),
+
+      applyCoupon: (coupon) => set({ coupon }),
+      clearCoupon: () => set({ coupon: null }),
       
       getTotalPrice: () => {
         return get().items.reduce((total, item) => total + item.price * item.quantity, 0);

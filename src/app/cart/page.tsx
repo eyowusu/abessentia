@@ -8,12 +8,19 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, Shield, Info } 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore, type CartAdjustment } from '@/lib/store';
+import { MAX_QUANTITY_PER_LINE } from '@/lib/order-limits';
 
 export default function CartPage() {
   const router = useRouter();
   const { items, removeItem, updateQuantity, getTotalPrice, getTotalItems, clearCart } = useCartStore();
   const applyServerCheck = useCartStore((state) => state.applyServerCheck);
+  const coupon = useCartStore((state) => state.coupon);
+  const applyCoupon = useCartStore((state) => state.applyCoupon);
+  const clearCoupon = useCartStore((state) => state.clearCoupon);
   const [adjustments, setAdjustments] = useState<CartAdjustment[]>([]);
+  const [couponInput, setCouponInput] = useState('');
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
   const hasRefreshed = useRef(false);
 
   // Refresh the cart against live prices and stock once, when the page opens.
@@ -51,6 +58,32 @@ export default function CartPage() {
 
   const handleCheckout = () => router.push('/checkout');
 
+  const subtotal = getTotalPrice();
+  // Preview only - the server re-resolves the code and recomputes this figure at
+  // checkout, so a stale or edited coupon cannot change what is actually charged.
+  const discount = coupon ? Number(((subtotal * coupon.percent) / 100).toFixed(2)) : 0;
+  const orderTotal = Number((subtotal - discount).toFixed(2));
+
+  const applyCode = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponBusy(true);
+    setCouponError(null);
+    try {
+      const res = await axios.post('/api/coupon/validate', { code });
+      if (res.data?.valid) {
+        applyCoupon({ code: res.data.code, percent: Number(res.data.percent) });
+        setCouponInput('');
+      } else {
+        setCouponError('That code is invalid or has expired.');
+      }
+    } catch {
+      setCouponError('Could not check that code right now. Please try again.');
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+
   const adjustmentMessage = (adjustment: CartAdjustment) => {
     switch (adjustment.type) {
       case 'removed':
@@ -58,7 +91,7 @@ export default function CartPage() {
       case 'quantity_reduced':
         return `Only ${adjustment.newQuantity} of ${adjustment.name} left — your quantity was reduced from ${adjustment.oldQuantity}.`;
       case 'price_changed':
-        return `The price of ${adjustment.name} changed from ₵${adjustment.oldPrice?.toFixed(2)} to ₵${adjustment.newPrice?.toFixed(2)}.`;
+        return `The price of ${adjustment.name} changed from GH₵${adjustment.oldPrice?.toFixed(2)} to GH₵${adjustment.newPrice?.toFixed(2)}.`;
     }
   };
 
@@ -132,7 +165,7 @@ export default function CartPage() {
 
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-xl mb-2 text-foreground line-clamp-1">{item.name}</h3>
-                      <p className="text-primary font-bold text-2xl mb-4">₵{item.price.toFixed(2)}</p>
+                      <p className="text-primary font-bold text-2xl mb-4">GH₵{item.price.toFixed(2)}</p>
 
                       <div className="flex items-center gap-4">
                         <div className="flex items-center bg-muted rounded-full overflow-hidden border border-border">
@@ -146,11 +179,17 @@ export default function CartPage() {
                           <span className="px-4 py-2 font-bold text-lg min-w-[50px] text-center">{item.quantity}</span>
                           <button
                             onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                            className="px-4 py-2.5 hover:bg-white transition-colors"
+                            className="px-4 py-2.5 hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={item.quantity >= MAX_QUANTITY_PER_LINE}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                         </div>
+                        {item.quantity >= MAX_QUANTITY_PER_LINE && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Maximum {MAX_QUANTITY_PER_LINE} per order
+                          </p>
+                        )}
 
                         <Button
                           variant="ghost"
@@ -165,7 +204,7 @@ export default function CartPage() {
 
                     <div className="text-right flex flex-col justify-center hidden sm:flex">
                       <p className="text-sm text-gray-500 mb-1">Subtotal</p>
-                      <p className="text-2xl font-bold text-foreground">₵{(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-foreground">GH₵{(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -194,8 +233,52 @@ export default function CartPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal ({getTotalItems()} {getTotalItems() === 1 ? 'item' : 'items'})</span>
-                    <span className="font-semibold text-foreground">₵{getTotalPrice().toFixed(2)}</span>
+                    <span className="font-semibold text-foreground">GH₵{subtotal.toFixed(2)}</span>
                   </div>
+
+                  {/* Coupon box - the discount shown is a preview; the server
+                      re-resolves the code and recomputes the discount at checkout. */}
+                  {coupon ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-green-800">
+                          {coupon.code} applied &mdash; {coupon.percent}% off
+                        </p>
+                        <p className="text-xs text-green-700">-GH₵{discount.toFixed(2)}</p>
+                      </div>
+                      <button
+                        onClick={clearCoupon}
+                        className="text-xs text-green-700 underline hover:text-green-900"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && applyCode()}
+                          placeholder="Coupon code"
+                          className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-surface text-sm focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 uppercase"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={applyCode}
+                          disabled={couponBusy || !couponInput.trim()}
+                        >
+                          {couponBusy ? 'Checking...' : 'Apply'}
+                        </Button>
+                      </div>
+                      {couponError && (
+                        <p className="text-xs text-red-600 mt-2">{couponError}</p>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-gray-600">
                     <span>Delivery</span>
                     <span className="text-secondary font-medium">Paid to rider on delivery</span>
@@ -209,7 +292,7 @@ export default function CartPage() {
                         at checkout because the rider collects their fee in person. */}
                     <div className="flex justify-between text-2xl font-bold text-foreground">
                       <span>Total</span>
-                      <span className="text-primary">₵{getTotalPrice().toFixed(2)}</span>
+                      <span className="text-primary">GH₵{orderTotal.toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
                       Delivery is arranged after checkout — you pay the delivery fee
@@ -226,7 +309,7 @@ export default function CartPage() {
                 <div className="mt-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
                     <Shield className="w-4 h-4 text-secondary" />
-                    <span>Secure checkout powered by PayGlobe</span>
+                    <span>Secure checkout powered by Paystack</span>
                   </div>
                 </div>
               </CardContent>
