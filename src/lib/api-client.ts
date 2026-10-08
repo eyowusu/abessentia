@@ -45,6 +45,8 @@ const normalizeProduct = (product: unknown) => {
     isAvailable: Boolean(p?.is_available ?? true),
     createdAt: asString(p?.created_at),
     sku: asString(p?.sku),
+    compareAtPrice: asNumber(p?.compare_at_price),
+    discountPercentage: asNumber(p?.discount_percentage),
   };
 };
 

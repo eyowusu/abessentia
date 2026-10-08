@@ -24,6 +24,15 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
 
   const outOfStock = product.stockStatus === 'out_of_stock' || product.stock <= 0;
 
+  // Per-product sale: compareAtPrice is the original; price is what is charged.
+  const onSale = !!product.compareAtPrice && product.compareAtPrice > product.price;
+  const salePercent = onSale
+    ? Math.round(
+        product.discountPercentage ??
+          ((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100
+      )
+    : 0;
+
   // The stepper must not let a shopper build a basket the server will reject. The ceiling
   // is whichever binds first: what can be bought at all, or the per-item purchase limit
   // enforced authoritatively in lib/order-limits.ts.
@@ -82,9 +91,21 @@ export default function ProductDetailClient({ product }: { product: CataloguePro
           <h1 className="text-2xl md:text-3xl font-bold text-foreground leading-tight mb-4">
             {product.name}
           </h1>
-          <p className="text-2xl md:text-3xl font-bold text-primary mb-2">
-            GH₵{product.price.toFixed(2)}
-          </p>
+          <div className="flex items-baseline gap-3 mb-2">
+            <p className="text-2xl md:text-3xl font-bold text-primary">
+              GH₵{product.price.toFixed(2)}
+            </p>
+            {onSale && (
+              <>
+                <span className="text-xl text-gray-400 line-through">
+                  GH₵{product.compareAtPrice!.toFixed(2)}
+                </span>
+                <span className="bg-red-100 text-red-600 text-sm font-bold px-2.5 py-1 rounded-full">
+                  Save {salePercent}%
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {product.description && (

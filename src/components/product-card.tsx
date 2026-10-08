@@ -22,6 +22,16 @@ export default function ProductCard({ product }: { product: CatalogueProduct }) 
   const outOfStock = product.stockStatus === 'out_of_stock' || !product.stock;
   const lowStock = !outOfStock && product.stockStatus === 'low_stock';
 
+  // Per-product sale: compareAtPrice is the original price; price is what the
+  // customer actually pays (and what the whole checkout path charges).
+  const onSale = !!product.compareAtPrice && product.compareAtPrice > product.price;
+  const salePercent = onSale
+    ? Math.round(
+        product.discountPercentage ??
+          ((product.compareAtPrice! - product.price) / product.compareAtPrice!) * 100
+      )
+    : 0;
+
   return (
     <div className="group bg-white rounded-2xl border border-[#E7E5E4] overflow-hidden hover:shadow-md transition-shadow">
       <Link href={`/products/${product.id}`} className="block relative aspect-square bg-[#F5F0EA]">
@@ -42,6 +52,8 @@ export default function ProductCard({ product }: { product: CatalogueProduct }) 
           <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">Sold out</span>
         ) : lowStock ? (
           <span className="absolute top-3 left-3 bg-amber-500 text-white text-xs font-bold px-3 py-1 rounded-full">Low stock</span>
+        ) : onSale ? (
+          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">-{salePercent}%</span>
         ) : null}
         <button
           aria-label={wished && mounted ? 'Remove from wishlist' : 'Add to wishlist'}
@@ -70,9 +82,16 @@ export default function ProductCard({ product }: { product: CatalogueProduct }) 
           </h3>
         </Link>
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-lg font-bold text-[#1C1917]">
-            GH₵{product.price.toFixed(2)}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-lg font-bold text-[#1C1917]">
+              GH₵{product.price.toFixed(2)}
+            </span>
+            {onSale && (
+              <span className="text-sm text-gray-400 line-through">
+                GH₵{product.compareAtPrice!.toFixed(2)}
+              </span>
+            )}
+          </div>
           <Button
             size="sm"
             onClick={() =>

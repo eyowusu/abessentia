@@ -34,6 +34,10 @@ export interface CatalogueProduct {
   isAvailable: boolean;
   createdAt?: string;
   sku?: string;
+  /** Original price when the product is on sale; the customer still pays `price`. */
+  compareAtPrice?: number;
+  /** PayGlobe-computed percent off when compareAtPrice > price. */
+  discountPercentage?: number;
 }
 
 export interface CatalogueCategory {
@@ -86,6 +90,8 @@ function normalizeProduct(p: unknown): CatalogueProduct {
     isAvailable: Boolean(r?.is_available ?? true),
     createdAt: asString(r?.created_at),
     sku: asString(r?.sku),
+    compareAtPrice: asNumber(r?.compare_at_price),
+    discountPercentage: asNumber(r?.discount_percentage),
   };
 }
 
