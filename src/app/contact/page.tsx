@@ -91,12 +91,12 @@ export default function ContactPage() {
                 </div>
                 <div className="space-y-4 text-gray-700">
                   <div className="flex justify-between items-center py-3 border-b border-border/50">
-                    <span className="font-medium">Mon - Fri</span>
-                    <span className="text-secondary font-bold">09:30 - 05:00</span>
+                    <span className="font-medium">Mon - Sat</span>
+                    <span className="text-secondary font-bold">9am - 8pm</span>
                   </div>
                   <div className="flex justify-between items-center py-3">
-                    <span className="font-medium">Sat & Sun</span>
-                    <span className="text-secondary font-bold">09:30 - 05:30</span>
+                    <span className="font-medium">Sun</span>
+                    <span className="text-secondary font-bold">1pm - 8pm</span>
                   </div>
                 </div>
               </CardContent>

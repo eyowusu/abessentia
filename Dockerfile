@@ -8,14 +8,16 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Full install (devDependencies included): the builder stage below needs
+# typescript and @tailwindcss/postcss to run `next build`. Production pruning
+# happens implicitly - the runner only copies the standalone output.
 COPY package*.json ./
-RUN npm ci --only=production --ignore-scripts
+RUN npm ci --ignore-scripts
 
 # ---- Build ----
 FROM base AS builder
 WORKDIR /app
 
-# Copy prod node_modules from deps stage (faster, reliable)
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

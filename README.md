@@ -14,13 +14,12 @@ A modern, responsive Next.js e-commerce website for AB Essentia, a PayGlobe merc
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: Zustand
+- **Styling**: Tailwind CSS v4
+- **State Management**: Zustand (cart + wishlist persisted to localStorage)
 - **HTTP Client**: Axios
 - **Icons**: Lucide React
-- **Animations**: Framer Motion
 
 ## Getting Started
 
@@ -44,7 +43,8 @@ npm install
 
 3. Create environment configuration:
 ```bash
-# Edit src/lib/config.ts to set your PayGlobe API URL and merchant ID
+cp env.example .env.local
+# Then fill in the values - see env.example for what each one does
 ```
 
 4. Run the development server:
@@ -60,23 +60,33 @@ npm run dev
 ab-essentia-web/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
-│   │   ├── page.tsx            # Home page
-│   │   ├── products/           # Products pages
+│   │   ├── page.tsx            # Home page (ISR, 5 min)
+│   │   ├── products/           # Catalogue + product detail
 │   │   ├── cart/               # Shopping cart
-│   │   ├── checkout/           # Checkout flow
-│   │   ├── about/              # About page
-│   │   ├── contact/            # Contact page
+│   │   ├── checkout/           # Checkout + success page
+│   │   ├── orders/track/       # Order tracking (order ref + email)
+│   │   ├── account/            # Passwordless order history (email code)
+│   │   ├── wishlist/           # Saved products
+│   │   ├── about/, contact/    # Static pages
+│   │   ├── api/                # Route handlers
+│   │   │   ├── proxy/          # Scoped catalogue proxy (CORS-free browsing)
+│   │   │   ├── paystack/       # initiate / fulfill / webhook / reconcile
+│   │   │   ├── cart/validate/  # Re-price stale carts against live catalogue
+│   │   │   ├── orders/track/   # Order status lookup
+│   │   │   └── account/        # Email-code sign-in, orders, logout
 │   │   └── layout.tsx          # Root layout
 │   ├── components/             # React components
-│   │   ├── ui/                 # UI components (Button, Card, Modal)
-│   │   ├── navigation.tsx      # Navigation bar
-│   │   └── footer.tsx          # Footer
-│   ├── lib/                    # Utilities and configurations
-│   │   ├── api-client.ts       # PayGlobe API client
-│   │   ├── config.ts           # App configuration
-│   │   ├── store.ts            # Zustand cart store
-│   │   └── utils.ts            # Utility functions
-│   └── globals.css             # Global styles
+│   │   ├── ui/                 # Button, Card
+│   │   ├── navigation.tsx      # Floating dock nav
+│   │   ├── footer.tsx          # Footer
+│   │   └── product-card.tsx    # Product tile
+│   └── lib/
+│       ├── api-client.ts       # Browser-facing catalogue + payment calls
+│       ├── store.ts            # Zustand cart/wishlist stores
+│       ├── order-limits.ts     # Hard per-order quantity ceilings
+│       ├── shipping.ts         # Ghana regions, delivery zones, fee ranges
+│       └── server/             # Server-only: PayGlobe, Paystack, catalogue,
+│                               # rate limiting, customer session, store scope
 └── package.json
 ```
 
@@ -100,8 +110,16 @@ PayGlobe is **deliberately not involved in payments**. All payment collection an
 - `GET /api/v1/merchants/public/products/` - Get all products
 - `GET /api/v1/merchants/public/products/{id}/` - Get product details
 - `GET /api/v1/merchants/public/products/categories/` - Get categories
-- `GET /api/v1/merchants/public/products/search/` - Search products
+- `GET /api/v1/merchants/public/products/featured/` - Featured products
+- `GET /api/v1/merchants/public/products/trending/` - Trending products
+- `GET /api/v1/merchants/public/products/bundles/` - Product bundles
+- `POST /api/v1/external/stock-reservations/` - Hold stock before payment (server-to-server)
+- `DELETE /api/v1/external/stock-reservations/{id}/` - Release a hold (server-to-server)
 - `POST /api/v1/external/paystack-orders/` - Record a paid order in PayGlobe (server-to-server)
+- `GET /api/v1/external/order-status/{ref}/` - Customer order lookup (server-to-server)
+- `POST /api/v1/external/customer-access/request/` - Email a sign-in code
+- `POST /api/v1/external/customer-access/verify/` - Exchange code for access token
+- `GET /api/v1/external/customer-orders/` - List the verified customer's orders
 
 ### Configuration
 
@@ -120,7 +138,13 @@ PAYGLOBE_API_KEY=<PayGlobe API key with `create_orders` scope>
 
 `NEXT_PUBLIC_STORE_ID` is preferred because it scopes products to a single store. `NEXT_PUBLIC_MERCHANT_ID` scopes products to every store owned by that merchant. If both are set, `NEXT_PUBLIC_STORE_ID` wins.
 
-## Deployment to Google Cloud Platform (GCP)
+## Deployment
+
+Production deploys to **Vercel** via git push to `main`. `vercel.json` registers a
+daily cron (`0 3 * * *`) hitting `/api/paystack/reconcile` — set `CRON_SECRET` in
+the Vercel project environment or the sweep stays closed.
+
+The GCP options below remain available as an alternative deployment path.
 
 ### Option 1: Google Cloud Run (Recommended)
 
@@ -226,7 +250,7 @@ PAYGLOBE_API_KEY=...
 # PAYGLOBE_BASE_URL=https://api.payglobe.net/api/v1/external
 
 # Required in production: guards /api/paystack/reconcile. Vercel sends this as a
-# Bearer token on cron runs (vercel.json schedules it every 30 minutes). Generate
+# Bearer token on cron runs (vercel.json schedules it daily at 03:00 UTC). Generate
 # with `openssl rand -hex 32`. The sweep re-runs fulfilment for any successful
 # Paystack charge whose order never reached PayGlobe - without it, that endpoint
 # stays closed and orphaned payments are only visible in logs.

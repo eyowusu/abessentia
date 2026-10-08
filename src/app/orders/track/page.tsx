@@ -212,7 +212,7 @@ function TrackOrderContent() {
                 <div className="text-right">
                   <p className="text-sm text-gray-500">Total</p>
                   <p className="text-2xl font-bold text-primary">
-                    ₵{Number(order.total).toFixed(2)}
+                    GH₵{Number(order.total).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -333,7 +333,7 @@ function TrackOrderContent() {
                         <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                       </div>
                       <p className="font-semibold text-primary">
-                        ₵{Number(item.subtotal).toFixed(2)}
+                        GH₵{Number(item.subtotal).toFixed(2)}
                       </p>
                     </div>
                   ))}

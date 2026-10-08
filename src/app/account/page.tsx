@@ -300,7 +300,7 @@ export default function AccountPage() {
                             {order.status_display || order.status}
                           </span>
                           <p className="text-lg font-bold text-primary mt-1">
-                            ₵{Number(order.total).toFixed(2)}
+                            GH₵{Number(order.total).toFixed(2)}
                           </p>
                         </div>
                       </div>

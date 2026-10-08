@@ -74,9 +74,9 @@ export default function ProductsPageContent({ initialProducts, initialCategories
     const step = (max - min) / 5 || 1;
     return [
       { label: 'All', min: 0, max: Infinity },
-      { label: `Under ₵${(min + step).toFixed(0)}`, min: 0, max: min + step },
-      { label: `₵${(min + step).toFixed(0)} - ₵${(min + step * 3).toFixed(0)}`, min: min + step, max: min + step * 3 },
-      { label: `Over ₵${(min + step * 3).toFixed(0)}`, min: min + step * 3, max: Infinity },
+      { label: `Under GH₵${(min + step).toFixed(0)}`, min: 0, max: min + step },
+      { label: `GH₵${(min + step).toFixed(0)} - GH₵${(min + step * 3).toFixed(0)}`, min: min + step, max: min + step * 3 },
+      { label: `Over GH₵${(min + step * 3).toFixed(0)}`, min: min + step * 3, max: Infinity },
     ];
   }, [products]);
 
