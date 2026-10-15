@@ -9,11 +9,11 @@ import { Card } from '@/components/ui/card';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { useMounted } from '@/lib/use-mounted';
 import { MAX_QUANTITY_PER_LINE } from '@/lib/order-limits';
-import type { CatalogueProduct } from '@/lib/server/catalogue';
+import { whatsappUrl } from '@/lib/config';
+import type { CatalogueProduct } from '@/lib/catalogue';
 
 const WHATSAPP_URL = (product: CatalogueProduct) =>
-  'https://wa.me/233242351314?text=' +
-  encodeURIComponent(`Hello AB Essentia! I'd like to ask about ${product.name} (GH₵${product.price.toFixed(2)}).`);
+  whatsappUrl(`Hello AB Essentia! I'd like to ask about ${product.name} (GH₵${product.price.toFixed(2)}).`);
 
 export default function ProductDetailClient({ product }: { product: CatalogueProduct }) {
   const [quantity, setQuantity] = useState(1);

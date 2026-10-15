@@ -11,6 +11,9 @@ import {
 // Read lazily inside the functions under test, so setting them here is enough.
 process.env.PAYSTACK_SECRET_KEY = 'sk_test_dummy_for_tests';
 process.env.PAYGLOBE_API_KEY = 'pg_test_dummy_for_tests';
+// catalogueScopeParams() throws without a scope - that is intentional - so tests
+// that reach PayGlobe calls must provide one.
+process.env.NEXT_PUBLIC_STORE_ID = '1';
 
 afterEach(() => mock.restoreAll());
 

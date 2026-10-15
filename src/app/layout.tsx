@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navigation } from "@/components/navigation";
 import { Footer } from "@/components/footer";
+import { getCanonicalSiteUrl } from "@/lib/server/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,7 +13,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abessentiagh.com'),
+  metadataBase: new URL(getCanonicalSiteUrl()),
   title: {
     default: "AB Essentia — Beauty By Nature",
     template: "%s | AB Essentia",

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requestCustomerAccessCode } from '@/lib/server/payglobe';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_RE } from '@/lib/validation';
 
 /**
  * Send a one-time sign-in code to the customer's checkout email.

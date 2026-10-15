@@ -10,7 +10,8 @@ import {
 } from '@/lib/server/payglobe';
 import { initializeTransaction, type PaystackOrderMetadata } from '@/lib/server/paystack';
 import { resolveCallbackUrl, withQueryParam } from '@/lib/server/site';
-import { quoteShipping } from '@/lib/shipping';
+import { getDeliveryInfo } from '@/lib/shipping';
+import { EMAIL_RE } from '@/lib/validation';
 import { couponDiscount, resolveAutoPromo, resolveCoupon } from '@/lib/server/coupons';
 import { OrderLimitError } from '@/lib/order-limits';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
@@ -23,6 +24,15 @@ import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-l
  * inside the Paystack transaction metadata so the payment can be fulfilled by either
  * the success callback or the webhook, without depending on the browser.
  */
+/**
+ * Trim and bound a caller-supplied free-text field before it goes into the
+ * Paystack transaction metadata and, later, the PayGlobe order. Unbounded input
+ * would only produce opaque failures far downstream.
+ */
+function capped(value: unknown, max: number): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim().slice(0, max) : undefined;
+}
+
 export async function POST(request: NextRequest) {
   // Throttle FIRST, before any PayGlobe call. This endpoint reserves real stock, so an
   // unthrottled caller can hold inventory off the shelf without ever paying. Doing this
@@ -64,8 +74,11 @@ export async function POST(request: NextRequest) {
     // on its side, so this is belt and the braces live there.
     const currency = 'GHS';
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim())) {
+      return NextResponse.json(
+        { error: 'Please provide a valid email address.' },
+        { status: 400 }
+      );
     }
 
     const requiredShipping = {
@@ -141,7 +154,7 @@ export async function POST(request: NextRequest) {
     // No delivery fee is charged online - the rider collects their own fee from the
     // customer in person. The zone still travels with the order so the merchant knows
     // the destination band, and the customer is charged the subtotal alone.
-    const shipping = quoteShipping(String(shipping_state));
+    const shipping = getDeliveryInfo(String(shipping_state));
     const orderTotal = Number((priced.subtotal - discount).toFixed(2));
     const amountMinor = Math.round(orderTotal * 100);
 
@@ -180,15 +193,15 @@ export async function POST(request: NextRequest) {
       discount_minor: Math.round(discount * 100),
       shipping_method: `standard-${shipping.zone}`,
       shipping_cost: 0,
-      customer_name,
-      customer_email: email,
-      customer_phone,
-      shipping_address,
-      shipping_city,
-      shipping_state,
-      shipping_postal_code,
+      customer_name: capped(customer_name, 200),
+      customer_email: String(email).trim(),
+      customer_phone: capped(customer_phone, 40),
+      shipping_address: capped(shipping_address, 500)!,
+      shipping_city: capped(shipping_city, 200)!,
+      shipping_state: capped(shipping_state, 100)!,
+      shipping_postal_code: capped(shipping_postal_code, 40)!,
       shipping_country: String(shipping_country).toUpperCase(),
-      shipping_phone,
+      shipping_phone: capped(shipping_phone, 40)!,
       items: priced.items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })),
     };
 

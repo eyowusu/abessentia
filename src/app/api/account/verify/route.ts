@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCustomerAccessCode } from '@/lib/server/payglobe';
-import { CUSTOMER_SESSION_COOKIE } from '@/lib/server/customer-session';
+import { CUSTOMER_EMAIL_COOKIE, CUSTOMER_SESSION_COOKIE } from '@/lib/customer-session';
 import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-limit';
 
 /**
@@ -8,7 +8,9 @@ import { RATE_LIMITS, rateLimit, rateLimitedResponse } from '@/lib/server/rate-l
  *
  * On success the PayGlobe access token is stored in an httpOnly cookie: it is a
  * bearer credential for the customer's own orders, so it must not be readable by
- * page JavaScript.
+ * page JavaScript. The email itself goes into a second, JS-readable cookie - it
+ * only carries what the customer typed, and lets the account page say who is
+ * signed in and pre-fill tracking links.
  */
 export async function POST(request: NextRequest) {
   // Throttled like the other auth endpoints: the code is six digits, so an
@@ -44,12 +46,19 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json({ ok: true });
-    response.cookies.set(CUSTOMER_SESSION_COOKIE, grant.accessToken, {
-      httpOnly: true,
+    const cookieOptions = {
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       path: '/',
       maxAge: grant.expiresIn,
+    };
+    response.cookies.set(CUSTOMER_SESSION_COOKIE, grant.accessToken, {
+      httpOnly: true,
+      ...cookieOptions,
+    });
+    response.cookies.set(CUSTOMER_EMAIL_COOKIE, email, {
+      httpOnly: false,
+      ...cookieOptions,
     });
     return response;
   } catch (error: unknown) {

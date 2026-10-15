@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCustomerOrders } from '@/lib/server/payglobe';
-import { CUSTOMER_SESSION_COOKIE } from '@/lib/server/customer-session';
+import { CUSTOMER_EMAIL_COOKIE, CUSTOMER_SESSION_COOKIE } from '@/lib/customer-session';
 
 /**
  * Order history for the signed-in customer.
@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
       response.cookies.delete(CUSTOMER_SESSION_COOKIE);
+      response.cookies.delete(CUSTOMER_EMAIL_COOKIE);
       return response;
     }
     return NextResponse.json({ orders });

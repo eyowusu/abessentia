@@ -7,21 +7,8 @@ import { CheckCircle, Home, Package, Sparkles, Loader2, AlertCircle } from 'luci
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { paymentApi } from '@/lib/api-client';
+import { apiError } from '@/lib/errors';
 import { useCartStore } from '@/lib/store';
-
-function getErrorMessage(err: unknown): string {
-  if (err && typeof err === 'object') {
-    const e = err as { response?: { data?: unknown }; message?: string };
-    const data =
-      e.response?.data && typeof e.response.data === 'object'
-        ? (e.response.data as { error?: string })
-        : undefined;
-    if (data?.error) return data.error;
-    if (e.message) return e.message;
-  }
-  if (err instanceof Error) return err.message;
-  return 'Failed to confirm your payment. Please contact support.';
-}
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
@@ -80,7 +67,7 @@ function CheckoutSuccessContent() {
     };
 
     fulfill().catch((err: unknown) => {
-      const message = getErrorMessage(err);
+      const message = apiError(err, 'Failed to confirm your payment. Please contact support.');
       setStatus('error');
       setErrorMessage(message);
     });
@@ -158,7 +145,7 @@ function CheckoutSuccessContent() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 mt-2 bg-primary rounded-full flex-shrink-0" />
-                    Expected delivery: 3-5 business days
+                    Expected delivery: 1-6 business days, depending on your region
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="w-1.5 h-1.5 mt-2 bg-primary rounded-full flex-shrink-0" />

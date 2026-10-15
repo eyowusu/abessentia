@@ -8,6 +8,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, Sparkles, Shield, Info } 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore, type CartAdjustment } from '@/lib/store';
+import { useMounted } from '@/lib/use-mounted';
 import { MAX_QUANTITY_PER_LINE } from '@/lib/order-limits';
 
 export default function CartPage() {
@@ -22,6 +23,7 @@ export default function CartPage() {
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [autoPromo, setAutoPromo] = useState<{ percent: number; label: string } | null>(null);
+  const mounted = useMounted();
   const hasRefreshed = useRef(false);
 
   // Refresh the cart against live prices and stock once, when the page opens.
@@ -109,6 +111,30 @@ export default function CartPage() {
         return `The price of ${adjustment.name} changed from GH₵${adjustment.oldPrice?.toFixed(2)} to GH₵${adjustment.newPrice?.toFixed(2)}.`;
     }
   };
+
+  // The persisted cart is empty during SSR and the first client render even when
+  // localStorage has items, so render a neutral skeleton until mounted - rendering
+  // the real cart (or the empty state) now would mismatch the server HTML.
+  if (!mounted) {
+    return (
+      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-background">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-8">Your Cart</h1>
+          <div className="animate-pulse space-y-6" aria-hidden="true">
+            {[0, 1].map((i) => (
+              <div key={i} className="bg-surface rounded-2xl border border-border p-6 flex gap-6">
+                <div className="w-28 h-28 bg-muted rounded-2xl" />
+                <div className="flex-1 space-y-3 py-2">
+                  <div className="h-5 bg-muted rounded w-1/3" />
+                  <div className="h-6 bg-muted rounded w-1/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (

@@ -6,7 +6,7 @@ import { Search, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/product-card';
 import { productApi } from '@/lib/api-client';
-import type { CatalogueProduct } from '@/lib/server/catalogue';
+import type { CatalogueProduct } from '@/lib/catalogue';
 
 interface ProductsPageContentProps {
   initialProducts: CatalogueProduct[];
@@ -22,13 +22,12 @@ export default function ProductsPageContent({ initialProducts, initialCategories
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [categories, setCategories] = useState<string[]>(['all', ...initialCategories]);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedPriceRange, setSelectedPriceRange] = useState<string>('all');
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string>('All');
 
   const fetchProducts = useCallback(async () => {
     try {
       const data = await productApi.getAll({ page_size: 100 });
-      const productList = (data as Record<string, unknown> | null)?.results || data;
-      setProducts(Array.isArray(productList) ? productList : []);
+      setProducts(data.results);
       setError(null);
     } catch {
       setError('Failed to load products. Please check your connection and try again.');
@@ -40,7 +39,7 @@ export default function ProductsPageContent({ initialProducts, initialCategories
   const fetchCategories = useCallback(async () => {
     try {
       const data = await productApi.getCategories();
-      const names = (data || []).map((cat) => (typeof cat === 'string' ? cat : cat.name)).filter(Boolean);
+      const names = data.map((cat) => cat.name).filter(Boolean);
       setCategories(['all', ...names]);
     } catch {
       // Server-provided categories already populate the list.
@@ -87,7 +86,7 @@ export default function ProductsPageContent({ initialProducts, initialCategories
       filtered = filtered.filter((p) => p.category === selectedCategory);
     }
 
-    if (selectedPriceRange !== 'all') {
+    if (selectedPriceRange !== 'All') {
       const range = priceRanges.find((r) => r.label === selectedPriceRange);
       if (range) {
         filtered = filtered.filter((p) => p.price >= range.min && p.price <= range.max);
@@ -108,13 +107,13 @@ export default function ProductsPageContent({ initialProducts, initialCategories
 
   const clearFilters = () => {
     setSelectedCategory('all');
-    setSelectedPriceRange('all');
+    setSelectedPriceRange('All');
     setSearchQuery('');
   };
 
   const activeFilterCount =
     (selectedCategory !== 'all' ? 1 : 0) +
-    (selectedPriceRange !== 'all' ? 1 : 0) +
+    (selectedPriceRange !== 'All' ? 1 : 0) +
     (searchQuery ? 1 : 0);
 
   if (loading) {

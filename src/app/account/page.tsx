@@ -16,53 +16,19 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
-interface CustomerOrder {
-  order_number: string;
-  status: string;
-  status_display?: string;
-  total: string;
-  currency: string;
-  shipping_carrier?: string;
-  tracking_number?: string;
-  tracking_url?: string;
-  tracking_is_deep_link?: boolean;
-  shipped_at?: string | null;
-  delivered_at?: string | null;
-  created_at: string;
-  items: Array<{ product_name: string; quantity: number; subtotal: string }>;
-}
+import { CUSTOMER_EMAIL_COOKIE } from '@/lib/customer-session';
+import { apiError } from '@/lib/errors';
+import { formatOrderDate, orderStatusTone } from '@/lib/order-display';
+import { readCookie } from '@/lib/utils';
+import type { CustomerOrderSummary } from '@/lib/catalogue';
 
 type Step = 'loading' | 'email' | 'code' | 'orders';
-
-function formatDate(value?: string | null) {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function statusTone(status: string): string {
-  switch (status) {
-    case 'delivered':
-      return 'bg-green-50 text-green-700 border-green-200';
-    case 'shipped':
-      return 'bg-blue-50 text-blue-700 border-blue-200';
-    case 'cancelled':
-    case 'refunded':
-      return 'bg-red-50 text-red-700 border-red-200';
-    default:
-      return 'bg-amber-50 text-amber-700 border-amber-200';
-  }
-}
 
 export default function AccountPage() {
   const [step, setStep] = useState<Step>('loading');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [orders, setOrders] = useState<CustomerOrder[]>([]);
+  const [orders, setOrders] = useState<CustomerOrderSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -70,7 +36,11 @@ export default function AccountPage() {
   const loadOrders = useCallback(async () => {
     try {
       const response = await axios.get('/api/account/orders');
-      setOrders(response.data.orders as CustomerOrder[]);
+      setOrders(response.data.orders as CustomerOrderSummary[]);
+      // A returning session has the cookie but no typed email - recover the signed-in
+      // address from the (non-httpOnly) display cookie the verify route set.
+      const signedInEmail = readCookie(CUSTOMER_EMAIL_COOKIE);
+      if (signedInEmail) setEmail(signedInEmail);
       setStep('orders');
     } catch (err) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -100,11 +70,7 @@ export default function AccountPage() {
       setInfo(`If ${email.trim()} has orders with us, a sign-in code is on its way.`);
       setStep('code');
     } catch (err) {
-      const message =
-        axios.isAxiosError(err) && (err.response?.data as { error?: string })?.error
-          ? (err.response!.data as { error?: string }).error!
-          : 'We could not send a code right now. Please try again shortly.';
-      setError(message);
+      setError(apiError(err, 'We could not send a code right now. Please try again shortly.'));
     } finally {
       setBusy(false);
     }
@@ -122,11 +88,7 @@ export default function AccountPage() {
       });
       await loadOrders();
     } catch (err) {
-      const message =
-        axios.isAxiosError(err) && (err.response?.data as { error?: string })?.error
-          ? (err.response!.data as { error?: string }).error!
-          : 'We could not verify that code right now. Please try again shortly.';
-      setError(message);
+      setError(apiError(err, 'We could not verify that code right now. Please try again shortly.'));
     } finally {
       setBusy(false);
     }
@@ -289,13 +251,13 @@ export default function AccountPage() {
                             {order.order_number}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {formatDate(order.created_at)} &middot;{' '}
+                            {formatOrderDate(order.created_at)} &middot;{' '}
                             {order.items.reduce((n, i) => n + i.quantity, 0)} item(s)
                           </p>
                         </div>
                         <div className="text-right">
                           <span
-                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${statusTone(order.status)}`}
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${orderStatusTone(order.status)}`}
                           >
                             {order.status_display || order.status}
                           </span>

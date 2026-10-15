@@ -1,8 +1,7 @@
 import type { MetadataRoute } from 'next';
+import { getCanonicalSiteUrl } from '@/lib/server/site';
 
-const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abessentiagh.com'
-).replace(/\/+$/, '');
+const SITE_URL = getCanonicalSiteUrl();
 
 export default function robots(): MetadataRoute.Robots {
   return {

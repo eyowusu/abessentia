@@ -6,7 +6,7 @@ import { Heart, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore, useWishlistStore } from '@/lib/store';
 import { useMounted } from '@/lib/use-mounted';
-import type { CatalogueProduct } from '@/lib/server/catalogue';
+import type { CatalogueProduct } from '@/lib/catalogue';
 
 export default function ProductCard({ product }: { product: CatalogueProduct }) {
   const { addItem } = useCartStore();

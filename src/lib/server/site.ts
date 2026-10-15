@@ -8,11 +8,22 @@
  * only a last resort for local development where nothing is configured.
  */
 
+import { DEFAULT_SITE_URL } from './config';
+
 const FALLBACK_ORIGIN = 'http://localhost:3000';
 
 /** Strip a trailing slash so callers can concatenate paths safely. */
 function trimTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '');
+}
+
+/**
+ * The canonical public origin for build-time consumers that have no request
+ * (metadata, robots, sitemap, product JSON-LD): the configured site URL, or the
+ * production host when unset.
+ */
+export function getCanonicalSiteUrl(): string {
+  return trimTrailingSlash(process.env.NEXT_PUBLIC_SITE_URL?.trim() || DEFAULT_SITE_URL);
 }
 
 /**

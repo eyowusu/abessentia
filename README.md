@@ -1,306 +1,202 @@
 # AB Essentia E-Commerce Website
 
-A modern, responsive Next.js e-commerce website for AB Essentia, a PayGlobe merchant. The website features a beautiful glass-morphism design, product catalog, shopping cart, and PayGlobe payment integration.
+The public storefront for AB Essentia — a Ghanaian natural-beauty brand selling via
+[PayGlobe](https://api.payglobe.net) as its catalogue and order-of-record, and its
+**own Paystack account** for all payment collection.
 
 ## Features
 
-- **Modern UI/UX**: Glass-morphism design with gradient backgrounds and smooth animations
-- **Product Catalog**: Browse products with search and category filtering
-- **Shopping Cart**: Full cart functionality with quantity management
-- **PayGlobe Integration**: Secure payment processing through PayGlobe API
-- **Responsive Design**: Mobile-first approach, works on all devices
-- **TypeScript**: Fully typed for better development experience
-- **State Management**: Zustand for cart state management
+- **Product catalogue** — server-rendered listing, detail, search and category filtering, revalidated every 5 minutes
+- **Cart & wishlist** — persisted client-side (Zustand), re-priced against live PayGlobe data before checkout
+- **Checkout** — Paystack hosted payment page; amount computed server-side, never trusted from the browser
+- **Order fulfilment** — success-page call + signed Paystack webhook + daily reconciliation sweep, all idempotent
+- **Order tracking** — look up by order number or payment reference + email
+- **Account** — passwordless sign-in (emailed one-time code) showing full order history
+- **Coupons & promos** — server-validated codes plus an optional site-wide automatic promo
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
+- **Framework**: Next.js 16 (App Router, Turbopack)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
-- **State Management**: Zustand (cart + wishlist persisted to localStorage)
-- **HTTP Client**: Axios
+- **State**: Zustand (cart + wishlist persisted to localStorage)
+- **HTTP**: Axios
 - **Icons**: Lucide React
+- **Tests**: Node's built-in test runner (`node --test`), compiled via `tsconfig.test.json`
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ installed
-- npm or yarn package manager
-- PayGlobe merchant account (for production)
+- Node.js **20.9+** (required by Next.js 16)
+- npm
 
 ### Installation
 
-1. Clone the repository:
 ```bash
 cd ab-essentia-web
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Create environment configuration:
-```bash
-cp env.example .env.local
-# Then fill in the values - see env.example for what each one does
-```
-
-4. Run the development server:
-```bash
+cp env.example .env.local   # then fill in the values - env.example documents each one
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Project Structure
 
 ```
 ab-essentia-web/
 ├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── page.tsx            # Home page (ISR, 5 min)
-│   │   ├── products/           # Catalogue + product detail
-│   │   ├── cart/               # Shopping cart
+│   ├── app/                    # Next.js App Router
+│   │   ├── page.tsx            # Home (ISR, 5 min)
+│   │   ├── products/           # Catalogue + product detail (ISR)
+│   │   ├── cart/               # Shopping cart (client, revalidated on open)
 │   │   ├── checkout/           # Checkout + success page
 │   │   ├── orders/track/       # Order tracking (order ref + email)
 │   │   ├── account/            # Passwordless order history (email code)
 │   │   ├── wishlist/           # Saved products
-│   │   ├── about/, contact/    # Static pages
-│   │   ├── api/                # Route handlers
-│   │   │   ├── proxy/          # Scoped catalogue proxy (CORS-free browsing)
+│   │   ├── about/, contact/    # Marketing pages
+│   │   ├── api/
+│   │   │   ├── proxy/          # Same-origin catalogue proxy (products, categories)
 │   │   │   ├── paystack/       # initiate / fulfill / webhook / reconcile
 │   │   │   ├── cart/validate/  # Re-price stale carts against live catalogue
+│   │   │   ├── coupon/validate/# Coupon + auto-promo resolution
 │   │   │   ├── orders/track/   # Order status lookup
-│   │   │   └── account/        # Email-code sign-in, orders, logout
-│   │   └── layout.tsx          # Root layout
-│   ├── components/             # React components
-│   │   ├── ui/                 # Button, Card
-│   │   ├── navigation.tsx      # Floating dock nav
-│   │   ├── footer.tsx          # Footer
-│   │   └── product-card.tsx    # Product tile
+│   │   │   └── account/        # request-code / verify / orders / logout
+│   │   ├── error.tsx           # Segment error boundary
+│   │   ├── not-found.tsx       # Styled 404
+│   │   └── layout.tsx          # Root layout (nav + footer)
+│   ├── components/             # navigation, footer, product-card, ui/ primitives
 │   └── lib/
+│       ├── catalogue.ts        # SHARED types + response normalizers (client & server)
+│       ├── config.ts           # Brand constants (WhatsApp, contact details)
+│       ├── customer-session.ts # Session + display cookie names
+│       ├── errors.ts           # apiError() message extraction
+│       ├── order-display.ts    # Order status badges / timeline helpers
 │       ├── api-client.ts       # Browser-facing catalogue + payment calls
 │       ├── store.ts            # Zustand cart/wishlist stores
 │       ├── order-limits.ts     # Hard per-order quantity ceilings
-│       ├── shipping.ts         # Ghana regions, delivery zones, fee ranges
-│       └── server/             # Server-only: PayGlobe, Paystack, catalogue,
-│                               # rate limiting, customer session, store scope
-└── package.json
+│       ├── shipping.ts         # Ghana regions + delivery windows
+│       ├── validation.ts       # Shared validators (email)
+│       ├── use-mounted.ts      # Hydration-safe "mounted" flag
+│       └── server/             # Server-only
+│           ├── config.ts       # PayGlobe bases + canonical site URL
+│           ├── payglobe.ts     # Pricing, stock holds, order recording, account
+│           ├── paystack.ts     # Init/verify/webhook/refund/reconcile
+│           ├── catalogue.ts    # Cached server-side catalogue fetcher
+│           ├── catalogue-proxy.ts  # Shared proxy forwarder
+│           ├── store-scope.ts  # store_id / merchant_id resolution (fails closed)
+│           ├── coupons.ts      # Coupon + auto-promo config parsing
+│           ├── rate-limit.ts   # In-process per-IP throttling
+│           └── site.ts         # Canonical URL / callback-origin checks
+├── env.example             # Every env var, documented
+├── Dockerfile              # Optional: standalone bundle for Cloud Run / Docker
+└── vercel.json             # Daily cron -> /api/paystack/reconcile
 ```
 
-## PayGlobe Integration
+## How payments work
 
-This website integrates with **PayGlobe** purely as the product catalogue and order-of-record.
+**PayGlobe never touches money.** It supplies products and stores orders; all payment
+collection and verification uses AB Essentia's own Paystack account.
 
-- **Product Fetching**: Retrieves products from PayGlobe merchant inventory.
-- **Order Recording**: After payment, the order is written back to PayGlobe for inventory/stock updates.
+1. `POST /api/paystack/initiate` — re-prices the cart against live PayGlobe data,
+   applies any coupon/auto-promo, places a **stock reservation**, then opens a
+   Paystack transaction with the order encoded in its metadata.
+2. Paystack redirects the customer to `/checkout/success?reference=…`, which calls
+   `POST /api/paystack/fulfill` — the payment is **verified server-side** and the
+   order recorded in PayGlobe.
+3. `POST /api/paystack/webhook` does the same server-to-server (HMAC SHA-512
+   verified), so a customer who closes the tab after paying still gets their order.
+4. A daily cron hits `GET /api/paystack/reconcile` and re-runs fulfilment for any
+   orphaned successful charge. Set `CRON_SECRET` or it stays closed.
 
-### AB Essentia owns all payments (Paystack)
+Fulfilment is idempotent across all three paths. A permanent failure (e.g. item sold
+out) triggers an automatic refund; a transient one is retried.
 
-PayGlobe is **deliberately not involved in payments**. All payment collection and verification is done by AB Essentia using the merchant's **own Paystack** account:
+### Paystack dashboard setup
 
-- `POST /api/paystack/initiate` — Calculates the authoritative total from PayGlobe product prices, then opens a Paystack payment link. Order details are stored inside the Paystack transaction metadata.
-- `POST /api/paystack/fulfill` — Confirms a payment by reference and records the order in PayGlobe.
-- `POST /api/paystack/webhook` — Reliable server-to-server fulfillment for cases where the customer closes the browser after paying.
+Settings → Webhooks:
 
-### API Endpoints Used
-
-- `GET /api/v1/merchants/public/products/` - Get all products
-- `GET /api/v1/merchants/public/products/{id}/` - Get product details
-- `GET /api/v1/merchants/public/products/categories/` - Get categories
-- `GET /api/v1/merchants/public/products/featured/` - Featured products
-- `GET /api/v1/merchants/public/products/trending/` - Trending products
-- `GET /api/v1/merchants/public/products/bundles/` - Product bundles
-- `POST /api/v1/external/stock-reservations/` - Hold stock before payment (server-to-server)
-- `DELETE /api/v1/external/stock-reservations/{id}/` - Release a hold (server-to-server)
-- `POST /api/v1/external/paystack-orders/` - Record a paid order in PayGlobe (server-to-server)
-- `GET /api/v1/external/order-status/{ref}/` - Customer order lookup (server-to-server)
-- `POST /api/v1/external/customer-access/request/` - Email a sign-in code
-- `POST /api/v1/external/customer-access/verify/` - Exchange code for access token
-- `GET /api/v1/external/customer-orders/` - List the verified customer's orders
-
-### Configuration
-
-Copy `env.example` to `.env.local` and set:
-
-```bash
-NEXT_PUBLIC_SITE_URL=https://abessentiagh.com
-NEXT_PUBLIC_PAYGLOBE_API_URL=https://api.payglobe.net
-# Set EXACTLY one of these so the shop only shows this merchant's products:
-NEXT_PUBLIC_STORE_ID=<the PayGlobe store id for AB Essentia>
-# OR, if you have multiple stores under one merchant:
-# NEXT_PUBLIC_MERCHANT_ID=<the PayGlobe merchant id>
-PAYSTACK_SECRET_KEY=sk_test_...
-PAYGLOBE_API_KEY=<PayGlobe API key with `create_orders` scope>
+```
+https://www.abessentiagh.com/api/paystack/webhook
 ```
 
-`NEXT_PUBLIC_STORE_ID` is preferred because it scopes products to a single store. `NEXT_PUBLIC_MERCHANT_ID` scopes products to every store owned by that merchant. If both are set, `NEXT_PUBLIC_STORE_ID` wins.
+Use the **www** host — the apex domain 308-redirects and webhook callbacks should not
+rely on redirects.
+
+## Configuration
+
+See **`env.example`** — it documents every variable, which are required, and why.
+The short list:
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | Canonical origin, must be `https://www.abessentiagh.com` (drives payment callbacks, sitemap, metadata) |
+| `NEXT_PUBLIC_PAYGLOBE_API_URL` | PayGlobe public API base |
+| `NEXT_PUBLIC_STORE_ID` **or** `NEXT_PUBLIC_MERCHANT_ID` | Scopes the catalogue to this shop (exactly one; store_id wins if both set) |
+| `PAYSTACK_SECRET_KEY` | Server-only, AB Essentia's own Paystack account |
+| `PAYGLOBE_API_KEY` | Server-only, `create_orders` scope |
+| `CRON_SECRET` | Guards `/api/paystack/reconcile` |
+| `PAYGLOBE_BASE_URL`, `RECONCILE_LOOKBACK_HOURS`, `NEXT_PUBLIC_IMAGE_HOSTS`, `COUPON_CODES`, `PROMO_AUTO_*` | Optional |
+
+No CORS configuration is needed on PayGlobe: the browser only ever talks to this
+app's own API routes, which forward catalogue reads server-side.
 
 ## Deployment
 
-Production deploys to **Vercel** via git push to `main`. `vercel.json` registers a
-daily cron (`0 3 * * *`) hitting `/api/paystack/reconcile` — set `CRON_SECRET` in
-the Vercel project environment or the sweep stays closed.
+### Vercel (production)
 
-The GCP options below remain available as an alternative deployment path.
+Push to `main` → deploy. `vercel.json` registers the daily cron
+(`0 3 * * *` → `/api/paystack/reconcile`). Set all env vars from `env.example`
+in the Vercel project, including `CRON_SECRET`.
 
-### Option 1: Google Cloud Run (Recommended)
+### Docker / Cloud Run (alternative)
 
-A `Dockerfile` is already in the project root and produces a Next.js standalone bundle.
+The `Dockerfile` produces a Next.js standalone bundle (`output: 'standalone'`):
 
-1. **Build and push the image**:
 ```bash
-gcloud auth configure-docker
-
 docker build -t gcr.io/PROJECT_ID/ab-essentia-web .
 docker push gcr.io/PROJECT_ID/ab-essentia-web
-```
-
-2. **Deploy to Cloud Run**:
-```bash
 gcloud run deploy ab-essentia-web \
   --image gcr.io/PROJECT_ID/ab-essentia-web \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --port 3000 \
-  --set-env-vars NEXT_PUBLIC_SITE_URL=https://abessentiagh.com \
-  --set-env-vars NEXT_PUBLIC_PAYGLOBE_API_URL=https://api.payglobe.net \
+  --platform managed --region us-central1 --allow-unauthenticated --port 3000 \
+  --set-env-vars NEXT_PUBLIC_SITE_URL=https://www.abessentiagh.com \
   --set-env-vars PAYSTACK_SECRET_KEY=sk_live_... \
-  --set-env-vars PAYGLOBE_API_KEY=...
+  --set-env-vars PAYGLOBE_API_KEY=... \
+  --set-env-vars NEXT_PUBLIC_STORE_ID=...
 ```
 
-### Important Paystack setup
+The reconcile sweep is an HTTP endpoint, so on non-Vercel hosting schedule it with
+any external cron that can send `Authorization: Bearer $CRON_SECRET`.
 
-Go to your Paystack dashboard → Settings → Webhooks and set:
-```
-https://abessentiagh.com/api/paystack/webhook
-```
-This makes order recording reliable even if the customer closes the browser immediately after payment.
-
-### Option 2: Google App Engine
-
-1. **Create app.yaml**:
-```yaml
-runtime: nodejs18
-instance_class: F2
-handlers:
-  - url: /_next/static
-    static_dir: .next/static
-    expiration: 1h
-  - url: /.*
-    script: auto
-```
-
-2. **Deploy**:
-```bash
-gcloud app deploy
-```
-
-### Option 3: Google Cloud Storage + Cloud CDN (Static Export)
-
-1. **Configure for static export** in `next.config.js`:
-```javascript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'export',
-  images: {
-    unoptimized: true,
-  },
-}
-module.exports = nextConfig
-```
-
-2. **Build static export**:
-```bash
-npm run build
-```
-
-3. **Upload to Cloud Storage**:
-```bash
-gsutil rsync -R out gs://YOUR_BUCKET_NAME
-```
-
-4. **Set up Cloud CDN** for the bucket
-
-## Domain Configuration (Namecheap)
-
-1. **Purchase domain**: Buy `abessentiagh.com` from Namecheap
-2. **Configure DNS**: Point domain to your GCP deployment
-   - For Cloud Run: Use a load balancer and set up custom domain
-   - For App Engine: Configure custom domain in GCP Console
-3. **SSL Certificate**: Enable SSL through GCP (automatic for Cloud Run/App Engine)
-
-## Environment Variables
-
-Create a `.env.local` file (not committed to git). Server-only keys must not be prefixed with `NEXT_PUBLIC_`:
-
-```env
-# Public (browser)
-NEXT_PUBLIC_SITE_URL=https://abessentiagh.com
-NEXT_PUBLIC_PAYGLOBE_API_URL=https://api.payglobe.net
-NEXT_PUBLIC_MERCHANT_ID=your_merchant_id
-
-# Server-only
-PAYSTACK_SECRET_KEY=sk_live_...
-PAYGLOBE_API_KEY=...
-# Optional: only needed if the external API path differs from the default.
-# PAYGLOBE_BASE_URL=https://api.payglobe.net/api/v1/external
-
-# Required in production: guards /api/paystack/reconcile. Vercel sends this as a
-# Bearer token on cron runs (vercel.json schedules it daily at 03:00 UTC). Generate
-# with `openssl rand -hex 32`. The sweep re-runs fulfilment for any successful
-# Paystack charge whose order never reached PayGlobe - without it, that endpoint
-# stays closed and orphaned payments are only visible in logs.
-CRON_SECRET=...
-
-# Optional: how far back the sweep looks, in hours. Default 72, chosen to exceed
-# Paystack's own webhook retry window.
-# RECONCILE_LOOKBACK_HOURS=72
-```
-
-## PayGlobe CORS requirement
-
-AB Essentia fetches products from the browser, so `abessentiagh.com` must be in PayGlobe's `CORS_ALLOWED_ORIGINS` environment variable before going live. Configure this in your PayGlobe deployment settings.
+A static export is **not** possible — this app is API-route-driven.
 
 ## Development
 
-### Available Scripts
+```bash
+npm run dev    # dev server
+npm run build  # production build
+npm start      # serve the production build
+npm run lint   # ESLint
+npm test       # unit tests (tsc -> node --test)
+```
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-
-### Adding New Features
-
-1. **New Page**: Create a new folder in `src/app/` with `page.tsx`
-2. **New Component**: Add to `src/components/`
-3. **API Integration**: Add functions to `src/lib/api-client.ts`
-
-## Performance Optimization
-
-- Image optimization with Next.js Image component
-- Static generation where possible
-- Code splitting automatic with Next.js
-- Lazy loading for components
+Tests live beside the code as `*.test.ts` and cover the payment/fulfilment
+decisions, coupons/promos, order limits, callback-URL safety and rate limiting.
 
 ## Security
 
-- **PayGlobe never touches payments**: AB Essentia uses its own Paystack account for all payment collection and verification.
-- Server-side secrets (`PAYSTACK_SECRET_KEY`, `PAYGLOBE_API_KEY`) are never exposed to the browser.
-- Paystack webhooks are signature-verified (HMAC SHA512) before any order is recorded.
-- HTTPS enforced in production.
-- Product prices are computed authoritatively from PayGlobe on the server so the client cannot alter the amount charged.
+- Server-side authoritative pricing — the browser total is never trusted
+- Paystack webhook signature verification (HMAC SHA-512)
+- Callback URLs constrained to the canonical origin (open-redirect guard)
+- Foreign Paystack transactions are ignored, never refunded
+- Per-IP rate limiting before any PayGlobe call
+- Strict headers: CSP (production), HSTS, nosniff, frame/permissions policies
+- Server secrets never reach the browser; the customer session token is httpOnly
 
 ## Support
 
-For issues or questions:
 - Email: info@abessentiagh.com
 - PayGlobe Merchant Dashboard: https://payglobe.net
 
-## License
-
-Copyright © 2024 AB Essentia. All rights reserved.
+Copyright © AB Essentia. All rights reserved.

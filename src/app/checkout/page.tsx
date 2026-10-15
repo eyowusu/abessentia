@@ -7,12 +7,15 @@ import { Lock, Loader2, Sparkles, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCartStore } from '@/lib/store';
+import { useMounted } from '@/lib/use-mounted';
 import { paymentApi } from '@/lib/api-client';
-import { GHANA_REGIONS, quoteShipping } from '@/lib/shipping';
+import { apiError } from '@/lib/errors';
+import { GHANA_REGIONS, getDeliveryInfo } from '@/lib/shipping';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotalPrice, getTotalItems, coupon } = useCartStore();
+  const { items, getTotalPrice, getTotalItems, coupon, clearCoupon } = useCartStore();
+  const mounted = useMounted();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoPromo, setAutoPromo] = useState<{ percent: number; label: string } | null>(null);
@@ -49,7 +52,7 @@ export default function CheckoutPage() {
   }, []);
 
   const subtotal = getTotalPrice();
-  const shipping = quoteShipping(formData.state);
+  const shipping = getDeliveryInfo(formData.state);
   // Preview only - the server re-resolves the code and recomputes this figure
   // against live PayGlobe prices at initiation. A coupon takes precedence over
   // the auto promo; they never stack.
@@ -60,7 +63,7 @@ export default function CheckoutPage() {
       : 0;
   const orderTotal = subtotal - discount;
 
-  const handlePayGlobeCheckout = async () => {
+  const handleCheckout = async () => {
     setLoading(true);
     setError(null);
 
@@ -80,7 +83,6 @@ export default function CheckoutPage() {
 
       const paymentResponse = await paymentApi.initiatePaystack({
         email: formData.email,
-        currency: 'GHS',
         callback_url: `${origin}/checkout/success`,
         customer_name: formData.fullName,
         customer_phone: formData.phone,
@@ -138,11 +140,12 @@ export default function CheckoutPage() {
             `Please wait about ${wait} and try again, or contact us at info@abessentiagh.com.`
         );
       } else {
-        const message =
-          axios.isAxiosError(err) && (err.response?.data as { error?: string })?.error
-            ? (err.response!.data as { error?: string }).error!
-            : 'We could not start your payment. You have not been charged. Please try again.';
-        setError(message);
+        setError(
+          apiError(
+            err,
+            'We could not start your payment. You have not been charged. Please try again.'
+          )
+        );
       }
     } finally {
       setLoading(false);
@@ -150,10 +153,21 @@ export default function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (items.length === 0 && typeof window !== 'undefined') {
+    if (mounted && items.length === 0) {
       router.push('/cart');
     }
-  }, [items, router]);
+  }, [items, router, mounted]);
+
+  // The persisted cart is empty during SSR and the first client render even when
+  // localStorage has items, so render a neutral loader until mounted - rendering
+  // the form now would mismatch the server HTML (hydration error).
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center py-12 px-4 bg-background">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return null;
@@ -336,8 +350,17 @@ export default function CheckoutPage() {
                     <span className="font-semibold text-foreground">GH₵{subtotal.toFixed(2)}</span>
                   </div>
                   {coupon && discount > 0 && (
-                    <div className="flex justify-between text-green-700">
-                      <span>Coupon {coupon.code} ({coupon.percent}% off)</span>
+                    <div className="flex justify-between items-center text-green-700">
+                      <span className="flex items-center gap-2">
+                        Coupon {coupon.code} ({coupon.percent}% off)
+                        <button
+                          type="button"
+                          onClick={clearCoupon}
+                          className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
+                        >
+                          remove
+                        </button>
+                      </span>
                       <span>-GH₵{discount.toFixed(2)}</span>
                     </div>
                   )}
@@ -387,7 +410,7 @@ export default function CheckoutPage() {
 
                 <Button
                   size="lg"
-                  onClick={handlePayGlobeCheckout}
+                  onClick={handleCheckout}
                   disabled={loading}
                   className="w-full"
                 >

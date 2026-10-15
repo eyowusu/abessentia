@@ -1,9 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { getProducts } from '@/lib/server/catalogue';
+import { getCanonicalSiteUrl } from '@/lib/server/site';
 
-const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abessentiagh.com'
-).replace(/\/+$/, '');
+const SITE_URL = getCanonicalSiteUrl();
 
 export const revalidate = 3600;
 

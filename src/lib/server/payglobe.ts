@@ -1,5 +1,12 @@
 import axios from 'axios';
 import { assertWithinOrderLimits } from '../order-limits';
+import { catalogueScopeParams } from './store-scope';
+import { PAYGLOBE_EXTERNAL_BASE, PAYGLOBE_PUBLIC_BASE } from './config';
+import type {
+  CartLineCheck,
+  CustomerOrderSummary,
+  OrderStatus,
+} from '../catalogue';
 
 /**
  * Server-only helpers for talking to PayGlobe.
@@ -8,28 +15,11 @@ import { assertWithinOrderLimits } from '../order-limits';
  * It NEVER touches payments: it does not collect, verify, hold, or settle money.
  * AB Essentia (this app) collects and verifies all payments via its own Paystack
  * account, then records the resulting order in PayGlobe for fulfillment/stock.
+ *
+ * Store scope resolves through catalogueScopeParams(), which throws when neither
+ * NEXT_PUBLIC_STORE_ID nor NEXT_PUBLIC_MERCHANT_ID is set - pricing must fail
+ * loudly rather than ever query an unscoped catalogue.
  */
-
-const PUBLIC_BASE = (
-  process.env.NEXT_PUBLIC_PAYGLOBE_API_URL || 'https://api.payglobe.net'
-).replace(/\/$/, '');
-
-const EXTERNAL_BASE = (
-  process.env.PAYGLOBE_BASE_URL ||
-  `${PUBLIC_BASE}/api/v1/external`
-).replace(/\/$/, '');
-
-function getScopeParams(): Record<string, string> {
-  const params: Record<string, string> = {};
-  const storeId = process.env.NEXT_PUBLIC_STORE_ID;
-  const merchantId = process.env.NEXT_PUBLIC_MERCHANT_ID;
-  if (storeId) {
-    params.store_id = storeId;
-  } else if (merchantId) {
-    params.merchant_id = merchantId;
-  }
-  return params;
-}
 
 export interface OrderItemInput {
   product_id: number;
@@ -55,9 +45,9 @@ export interface PricedOrder {
  * with the amount that gets charged.
  */
 async function fetchPublicProduct(productId: number) {
-  const url = `${PUBLIC_BASE}/api/v1/merchants/public/products/${productId}/`;
+  const url = `${PAYGLOBE_PUBLIC_BASE}/api/v1/merchants/public/products/${productId}/`;
   const res = await axios.get(url, {
-    params: getScopeParams(),
+    params: catalogueScopeParams(),
     timeout: 30000,
   });
   const p = res.data as Record<string, unknown>;
@@ -81,16 +71,7 @@ async function fetchPublicProduct(productId: number) {
   };
 }
 
-export interface CartLineCheck {
-  product_id: number;
-  name: string;
-  /** Current price per unit, from PayGlobe. */
-  price: number;
-  /** Quantity the customer can actually have right now (0 if unavailable). */
-  available: number;
-  requested: number;
-  isAvailable: boolean;
-}
+export type { CartLineCheck };
 
 /**
  * Report the current price and availability of each cart line, without throwing.
@@ -239,7 +220,7 @@ export async function reserveStock(
     throw new Error('PAYGLOBE_API_KEY is not configured');
   }
 
-  const scope = getScopeParams();
+  const scope = catalogueScopeParams();
   const payload: Record<string, unknown> = {
     external_order_id: externalOrderId,
     external_source: 'ab_essentia',
@@ -253,7 +234,7 @@ export async function reserveStock(
   }
 
   try {
-    await axios.post(`${EXTERNAL_BASE}/stock-reservations/`, payload, {
+    await axios.post(`${PAYGLOBE_EXTERNAL_BASE}/stock-reservations/`, payload, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
@@ -289,7 +270,7 @@ export async function releaseStock(externalOrderId: string): Promise<void> {
 
   try {
     await axios.delete(
-      `${EXTERNAL_BASE}/stock-reservations/${encodeURIComponent(externalOrderId)}/`,
+      `${PAYGLOBE_EXTERNAL_BASE}/stock-reservations/${encodeURIComponent(externalOrderId)}/`,
       {
         headers: { Authorization: `Bearer ${apiKey}` },
         params: { external_source: 'ab_essentia' },
@@ -306,25 +287,7 @@ export async function releaseStock(externalOrderId: string): Promise<void> {
   }
 }
 
-export interface OrderStatus {
-  order_number: string;
-  status: string;
-  status_display?: string;
-  payment_status: string;
-  total: string;
-  currency: string;
-  shipping_city?: string;
-  shipping_carrier?: string;
-  tracking_number?: string;
-  /** Direct tracking link resolved by PayGlobe, when the courier is one it knows. */
-  tracking_url?: string;
-  /** False when tracking_url is a paste-in search page rather than this parcel's status. */
-  tracking_is_deep_link?: boolean;
-  shipped_at?: string | null;
-  delivered_at?: string | null;
-  created_at: string;
-  items: Array<{ product_name: string; quantity: number; subtotal: string }>;
-}
+export type { OrderStatus };
 
 /**
  * Look up an order's status for a customer.
@@ -343,11 +306,11 @@ export async function getOrderStatus(
     throw new Error('PAYGLOBE_API_KEY is not configured');
   }
 
-  const scope = getScopeParams();
+  const scope = catalogueScopeParams();
 
   try {
     const res = await axios.get(
-      `${EXTERNAL_BASE}/order-status/${encodeURIComponent(orderRef)}/`,
+      `${PAYGLOBE_EXTERNAL_BASE}/order-status/${encodeURIComponent(orderRef)}/`,
       {
         headers: { Authorization: `Bearer ${apiKey}` },
         params: { ...scope, customer_email: customerEmail },
@@ -363,23 +326,7 @@ export async function getOrderStatus(
   }
 }
 
-export interface CustomerOrderSummary {
-  order_number: string;
-  status: string;
-  status_display?: string;
-  payment_status: string;
-  total: string;
-  currency: string;
-  shipping_carrier?: string;
-  tracking_number?: string;
-  /** Direct tracking link resolved by PayGlobe, when the courier is one it knows. */
-  tracking_url?: string;
-  tracking_is_deep_link?: boolean;
-  shipped_at?: string | null;
-  delivered_at?: string | null;
-  created_at: string;
-  items: Array<{ product_name: string; quantity: number; subtotal: string }>;
-}
+export type { CustomerOrderSummary };
 
 /**
  * Ask PayGlobe to email a one-time sign-in code to the customer.
@@ -395,11 +342,11 @@ export async function requestCustomerAccessCode(email: string): Promise<void> {
   }
 
   await axios.post(
-    `${EXTERNAL_BASE}/customer-access/request/`,
+    `${PAYGLOBE_EXTERNAL_BASE}/customer-access/request/`,
     { customer_email: email },
     {
       headers: { Authorization: `Bearer ${apiKey}` },
-      params: getScopeParams(),
+      params: catalogueScopeParams(),
       timeout: 30000,
     }
   );
@@ -425,11 +372,11 @@ export async function verifyCustomerAccessCode(
 
   try {
     const res = await axios.post(
-      `${EXTERNAL_BASE}/customer-access/verify/`,
+      `${PAYGLOBE_EXTERNAL_BASE}/customer-access/verify/`,
       { customer_email: email, code },
       {
         headers: { Authorization: `Bearer ${apiKey}` },
-        params: getScopeParams(),
+        params: catalogueScopeParams(),
         timeout: 30000,
       }
     );
@@ -460,9 +407,9 @@ export async function getCustomerOrders(
   }
 
   try {
-    const res = await axios.get(`${EXTERNAL_BASE}/customer-orders/`, {
+    const res = await axios.get(`${PAYGLOBE_EXTERNAL_BASE}/customer-orders/`, {
       headers: { Authorization: `Bearer ${apiKey}` },
-      params: { ...getScopeParams(), access_token: accessToken },
+      params: { ...catalogueScopeParams(), access_token: accessToken },
       timeout: 30000,
     });
     const data = res.data as { results?: CustomerOrderSummary[] };
@@ -507,7 +454,7 @@ export async function recordPaidOrder(input: RecordOrderInput) {
     throw new Error('PAYGLOBE_API_KEY is not configured');
   }
 
-  const scope = getScopeParams();
+  const scope = catalogueScopeParams();
   const storeId = input.store_id || (scope.store_id ? Number(scope.store_id) : undefined);
 
   const payload: Record<string, unknown> = {
@@ -543,7 +490,7 @@ export async function recordPaidOrder(input: RecordOrderInput) {
     payload.store_id = storeId;
   }
 
-  const res = await axios.post(`${EXTERNAL_BASE}/paystack-orders/`, payload, {
+  const res = await axios.post(`${PAYGLOBE_EXTERNAL_BASE}/paystack-orders/`, payload, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',

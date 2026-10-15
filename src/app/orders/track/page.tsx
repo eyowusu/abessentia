@@ -5,10 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import {
-  Package,
   Search,
   Truck,
-  CheckCircle2,
   Loader2,
   AlertCircle,
   Sparkles,
@@ -17,57 +15,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-
-interface TrackedOrder {
-  order_number: string;
-  status: string;
-  status_display?: string;
-  payment_status: string;
-  total: string;
-  currency: string;
-  shipping_city?: string;
-  shipping_carrier?: string;
-  tracking_number?: string;
-  /** Resolved by PayGlobe from the carrier, or pasted by the merchant. May be absent. */
-  tracking_url?: string;
-  /** False when tracking_url is only a search page the customer must fill in. */
-  tracking_is_deep_link?: boolean;
-  shipped_at?: string | null;
-  delivered_at?: string | null;
-  created_at: string;
-  items: Array<{ product_name: string; quantity: number; subtotal: string }>;
-}
-
-/** The journey we show the customer, in order. */
-const STAGES = [
-  { key: 'confirmed', label: 'Order Confirmed', icon: CheckCircle2 },
-  { key: 'processing', label: 'Being Prepared', icon: Package },
-  { key: 'shipped', label: 'On Its Way', icon: Truck },
-  { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
-];
-
-/** How far along the STAGES list this order is; -1 for cancelled/refunded. */
-function stageIndex(status: string): number {
-  if (status === 'cancelled' || status === 'refunded') return -1;
-  const index = STAGES.findIndex((s) => s.key === status);
-  // Anything paid but not yet moved (e.g. 'pending') still counts as confirmed.
-  return index === -1 ? 0 : index;
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
+import { apiError } from '@/lib/errors';
+import { ORDER_STAGES, formatOrderDate, orderStageIndex } from '@/lib/order-display';
+import type { OrderStatus } from '@/lib/catalogue';
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
   const [orderRef, setOrderRef] = useState(searchParams.get('order') || '');
   const [email, setEmail] = useState(searchParams.get('email') || '');
-  const [order, setOrder] = useState<TrackedOrder | null>(null);
+  const [order, setOrder] = useState<OrderStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,13 +37,9 @@ function TrackOrderContent() {
         order_ref: ref.trim(),
         email: mail.trim(),
       });
-      setOrder(response.data.order as TrackedOrder);
+      setOrder(response.data.order as OrderStatus);
     } catch (err) {
-      const message =
-        axios.isAxiosError(err) && (err.response?.data as { error?: string })?.error
-          ? (err.response!.data as { error?: string }).error!
-          : 'We could not look up your order right now. Please try again shortly.';
-      setError(message);
+      setError(apiError(err, 'We could not look up your order right now. Please try again shortly.'));
     } finally {
       setLoading(false);
     }
@@ -116,7 +68,7 @@ function TrackOrderContent() {
     lookup(orderRef, email);
   };
 
-  const currentStage = order ? stageIndex(order.status) : 0;
+  const currentStage = order ? orderStageIndex(order.status) : 0;
   const isCancelled = order?.status === 'cancelled' || order?.status === 'refunded';
 
   return (
@@ -206,7 +158,7 @@ function TrackOrderContent() {
                     {order.order_number}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Placed {formatDate(order.created_at)}
+                    Placed {formatOrderDate(order.created_at)}
                   </p>
                 </div>
                 <div className="text-right">
@@ -233,7 +185,7 @@ function TrackOrderContent() {
               ) : (
                 <div className="mb-8">
                   <ol className="space-y-4">
-                    {STAGES.map((stage, index) => {
+                    {ORDER_STAGES.map((stage, index) => {
                       const done = index <= currentStage;
                       const isCurrent = index === currentStage;
                       const Icon = stage.icon;
@@ -263,12 +215,12 @@ function TrackOrderContent() {
                             </p>
                             {stage.key === 'shipped' && order.shipped_at && (
                               <p className="text-sm text-gray-500">
-                                {formatDate(order.shipped_at)}
+                                {formatOrderDate(order.shipped_at)}
                               </p>
                             )}
                             {stage.key === 'delivered' && order.delivered_at && (
                               <p className="text-sm text-gray-500">
-                                {formatDate(order.delivered_at)}
+                                {formatOrderDate(order.delivered_at)}
                               </p>
                             )}
                           </div>

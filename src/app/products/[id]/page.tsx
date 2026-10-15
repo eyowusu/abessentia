@@ -5,10 +5,11 @@ import { ChevronRight } from 'lucide-react';
 import ProductCard from '@/components/product-card';
 import ProductDetailClient from './product-detail-client';
 import { getProduct, getProducts } from '@/lib/server/catalogue';
+import { getCanonicalSiteUrl } from '@/lib/server/site';
 
 export const revalidate = 300;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.abessentiagh.com';
+const SITE_URL = getCanonicalSiteUrl();
 
 interface Props {
   params: Promise<{ id: string }>;

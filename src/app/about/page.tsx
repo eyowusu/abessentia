@@ -1,5 +1,13 @@
+import type { Metadata } from 'next';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Target, Heart, Users, Award, Sparkles } from 'lucide-react';
+
+export const metadata: Metadata = {
+  title: 'About Us — AB Essentia',
+  description:
+    'AB Essentia is a Ghanaian natural beauty brand inspired by grandmother Agnes Baidoo — honest formulations, sustainable practices, handcrafted in Accra.',
+};
 
 export default function AboutPage() {
   return (
@@ -43,8 +51,7 @@ export default function AboutPage() {
             </div>
             <div className="relative">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-primary/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/about-1.jpg" alt="Beauty by Nature" className="w-full h-auto" />
+                <Image src="/about-1.jpg" alt="Beauty by Nature" width={1600} height={2000} className="w-full h-auto" />
               </div>
             </div>
           </div>
@@ -72,8 +79,7 @@ export default function AboutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative order-2 lg:order-1">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-secondary/10">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/about-2.jpg" alt="Our Vision" className="w-full h-auto" />
+                <Image src="/about-2.jpg" alt="Our Vision" width={832} height={1153} className="w-full h-auto" />
               </div>
             </div>
             <div className="order-1 lg:order-2">

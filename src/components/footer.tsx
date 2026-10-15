@@ -2,10 +2,9 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Mail, Phone, MapPin, Sparkles, MessageCircle } from 'lucide-react';
+import { CONTACT_EMAIL, CONTACT_PHONE_DISPLAY, PHONE_E164, whatsappUrl } from '@/lib/config';
 
-const WHATSAPP_URL =
-  'https://wa.me/233242351314?text=' +
-  encodeURIComponent('Hello AB Essentia! I have a question.');
+const WHATSAPP_URL = whatsappUrl('Hello AB Essentia! I have a question.');
 
 export const Footer = () => {
   const quickLinks = [
@@ -31,17 +30,17 @@ export const Footer = () => {
               AKWAABA! Welcome to AB Essentia — Ghana. Premium natural beauty crafted with intention.
             </p>
             <div className="space-y-3 text-sm">
-              <a href="tel:+2330242351314" className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors group">
+              <a href={`tel:${PHONE_E164}`} className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors group">
                 <div className="w-10 h-10 bg-secondary/15 rounded-xl flex items-center justify-center group-hover:bg-secondary/25 transition-colors">
                   <Phone className="w-4 h-4 text-secondary-light" />
                 </div>
-                <span className="font-medium">+233 (0) 24 235 1314</span>
+                <span className="font-medium">{CONTACT_PHONE_DISPLAY}</span>
               </a>
-              <a href="mailto:info@abessentiagh.com" className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors group">
+              <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center space-x-3 text-gray-300 hover:text-primary transition-colors group">
                 <div className="w-10 h-10 bg-secondary/15 rounded-xl flex items-center justify-center group-hover:bg-secondary/25 transition-colors">
                   <Mail className="w-4 h-4 text-secondary-light" />
                 </div>
-                <span className="font-medium">info@abessentiagh.com</span>
+                <span className="font-medium">{CONTACT_EMAIL}</span>
               </a>
             </div>
           </div>

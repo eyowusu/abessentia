@@ -6,7 +6,9 @@
  * an unscoped request either serves another merchant's catalogue or fails
  * upstream - both are wrong answers to show a shopper.
  *
- * `store_id` wins when both are set, matching getScopeParams() in payglobe.ts.
+ * `store_id` wins when both are set. Every PayGlobe call in lib/server/payglobe.ts
+ * resolves scope through this same function, so pricing, reservations, order
+ * recording and customer access all fail closed the same way.
  * No default store id: a hardcoded fallback was previously '2', which works only
  * as long as this merchant keeps that exact id - an assumption the config
  * contract (set exactly one of STORE_ID / MERCHANT_ID) does not make.

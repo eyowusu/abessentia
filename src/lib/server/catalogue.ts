@@ -1,4 +1,14 @@
+import { PAYGLOBE_PUBLIC_BASE } from './config';
 import { catalogueScopeParams } from './store-scope';
+import {
+  asString,
+  normalizeCategoryList,
+  normalizeProduct,
+  normalizeProductList,
+  type CatalogueBundle,
+  type CatalogueCategory,
+  type CatalogueProduct,
+} from '../catalogue';
 
 /**
  * Server-side catalogue fetcher for AB Essentia.
@@ -7,104 +17,19 @@ import { catalogueScopeParams } from './store-scope';
  * the same URLs the /api/proxy routes forward to). Next.js caches each fetch
  * for `revalidate` seconds, so product pages render instantly from cache and
  * stay fresh without per-request API calls.
+ *
+ * The response types and normalizers are shared with the browser in
+ * lib/catalogue.ts, so server-rendered and client-fetched products are always
+ * the same shape.
  */
-
-const PUBLIC_BASE = (
-  process.env.NEXT_PUBLIC_PAYGLOBE_API_URL || 'https://api.payglobe.net'
-).replace(/\/$/, '');
 
 const REVALIDATE = 300; // 5 minutes
 
-export interface CatalogueProduct {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  image?: string;
-  category?: string;
-  /**
-   * Units this shopper may add to their basket, NOT the merchant's true inventory.
-   * PayGlobe caps the figure it publishes so the catalogue cannot be polled to read
-   * real stock levels, so treat this only as "how many can I buy right now".
-   */
-  stock: number;
-  /** Coarse availability band from PayGlobe; preferred over comparing `stock`. */
-  stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock';
-  rating?: number;
-  isAvailable: boolean;
-  createdAt?: string;
-  sku?: string;
-  /** Original price when the product is on sale; the customer still pays `price`. */
-  compareAtPrice?: number;
-  /** PayGlobe-computed percent off when compareAtPrice > price. */
-  discountPercentage?: number;
-}
-
-export interface CatalogueCategory {
-  id: string;
-  name: string;
-  description?: string;
-  image?: string;
-}
-
-const asString = (v: unknown): string | undefined =>
-  typeof v === 'string' ? v : undefined;
-
-const asNumber = (v: unknown): number | undefined => {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string' && v !== '') return Number(v);
-  return undefined;
-};
-
-/**
- * Read PayGlobe's availability band, falling back to the quantity for older responses
- * that predate `stock_status`.
- */
-function normalizeStockStatus(
-  r: Record<string, unknown> | null | undefined
-): CatalogueProduct['stockStatus'] {
-  const raw = r?.stock_status;
-  if (raw === 'in_stock' || raw === 'low_stock' || raw === 'out_of_stock') {
-    return raw;
-  }
-  const quantity = Number(r?.available_quantity ?? r?.stock_quantity ?? 0);
-  if (!(quantity > 0)) return 'out_of_stock';
-  return r?.is_low_stock ? 'low_stock' : 'in_stock';
-}
-
-function normalizeProduct(p: unknown): CatalogueProduct {
-  const r = p as Record<string, unknown> | null | undefined;
-  return {
-    id: String(r?.id ?? ''),
-    name: String(r?.name ?? ''),
-    price: Number(r?.price ?? 0),
-    description: asString(r?.description),
-    image: asString(r?.image_url || r?.thumbnail_url || r?.image),
-    category: asString(r?.category_name || r?.category),
-    // available_quantity is the current name; stock_quantity is PayGlobe's deprecated
-    // alias carrying the same capped value. Both are read so the storefront works
-    // against either version of the API.
-    stock: Number(r?.available_quantity ?? r?.stock_quantity ?? 0),
-    stockStatus: normalizeStockStatus(r),
-    rating: asNumber(r?.rating),
-    isAvailable: Boolean(r?.is_available ?? true),
-    createdAt: asString(r?.created_at),
-    sku: asString(r?.sku),
-    compareAtPrice: asNumber(r?.compare_at_price),
-    discountPercentage: asNumber(r?.discount_percentage),
-  };
-}
-
-function normalizeList(data: unknown): CatalogueProduct[] {
-  const results = Array.isArray(data)
-    ? data
-    : ((data as Record<string, unknown> | null)?.results ?? []);
-  return (results as unknown[]).map(normalizeProduct);
-}
+export type { CatalogueBundle, CatalogueCategory, CatalogueProduct };
 
 async function fetchJson(path: string): Promise<unknown> {
   const scope = new URLSearchParams(catalogueScopeParams()).toString();
-  const url = `${PUBLIC_BASE}${path}${path.includes('?') ? '&' : '?'}${scope}`;
+  const url = `${PAYGLOBE_PUBLIC_BASE}${path}${path.includes('?') ? '&' : '?'}${scope}`;
   const res = await fetch(url, { next: { revalidate: REVALIDATE } });
   if (!res.ok) throw new Error(`Catalogue request failed: ${res.status} ${path}`);
   return res.json();
@@ -121,7 +46,7 @@ export async function getProducts(pageSize = 100, maxPages = 10): Promise<Catalo
     `/api/v1/merchants/public/products/?page_size=${pageSize}&include_out_of_stock=true`
   );
 
-  const results = normalizeList(data);
+  const results = normalizeProductList(data);
   let next = (data as Record<string, unknown> | null)?.next;
 
   for (let pages = 1; pages < maxPages && typeof next === 'string' && next; pages += 1) {
@@ -137,7 +62,7 @@ export async function getProducts(pageSize = 100, maxPages = 10): Promise<Catalo
     data = await fetchJson(
       `/api/v1/merchants/public/products/?page_size=${pageSize}&include_out_of_stock=true&page=${pageNum}`
     );
-    results.push(...normalizeList(data));
+    results.push(...normalizeProductList(data));
     next = (data as Record<string, unknown> | null)?.next;
   }
 
@@ -155,7 +80,7 @@ export async function getProduct(id: string): Promise<CatalogueProduct | null> {
 
 export async function getFeatured(): Promise<CatalogueProduct[]> {
   try {
-    return normalizeList(
+    return normalizeProductList(
       await fetchJson('/api/v1/merchants/public/products/featured/?include_out_of_stock=true')
     );
   } catch {
@@ -165,19 +90,12 @@ export async function getFeatured(): Promise<CatalogueProduct[]> {
 
 export async function getTrending(): Promise<CatalogueProduct[]> {
   try {
-    return normalizeList(
+    return normalizeProductList(
       await fetchJson('/api/v1/merchants/public/products/trending/?include_out_of_stock=true')
     );
   } catch {
     return [];
   }
-}
-
-export interface CatalogueBundle {
-  id: string;
-  name: string;
-  image?: string;
-  products?: string | string[];
 }
 
 export async function getBundles(): Promise<CatalogueBundle[]> {
@@ -202,20 +120,9 @@ export async function getBundles(): Promise<CatalogueBundle[]> {
 
 export async function getCategories(): Promise<CatalogueCategory[]> {
   try {
-    const data = await fetchJson('/api/v1/merchants/public/products/categories/');
-    const cats =
-      ((data as Record<string, unknown> | null)?.categories as unknown[] | undefined) ??
-      (Array.isArray(data) ? data : []);
-    return cats.map((cat: unknown) => {
-      if (typeof cat === 'string') return { id: '', name: cat };
-      const c = cat as Record<string, unknown> | null | undefined;
-      return {
-        id: String(c?.id ?? ''),
-        name: String(c?.name ?? ''),
-        description: asString(c?.description),
-        image: asString(c?.image),
-      };
-    });
+    return normalizeCategoryList(
+      await fetchJson('/api/v1/merchants/public/products/categories/')
+    );
   } catch {
     return [];
   }

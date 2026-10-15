@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import ProductCard from '@/components/product-card';
 import { getCategories, getFeatured, getTrending, getBundles } from '@/lib/server/catalogue';
+import { whatsappUrl } from '@/lib/config';
 
 export const metadata: Metadata = {
   title: 'AB Essentia — Natural Beauty, Handcrafted in Ghana',
@@ -15,9 +16,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
-const WHATSAPP_URL =
-  'https://wa.me/233242351314?text=' +
-  encodeURIComponent('Hello AB Essentia! I have a question about your products.');
+const WHATSAPP_URL = whatsappUrl('Hello AB Essentia! I have a question about your products.');
 
 const CATEGORY_META: Record<string, { image: string; description: string }> = {
   'ALL PRODUCTS': {

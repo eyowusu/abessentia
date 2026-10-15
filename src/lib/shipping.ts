@@ -67,9 +67,10 @@ export interface DeliveryInfo {
 /**
  * Delivery window for a region. Used by both the browser (to preview) and the
  * server (authoritatively), so the two can never disagree about what the customer
- * was shown.
+ * was shown. Named getDeliveryInfo rather than a "quote": no fee is charged
+ * online - the rider collects their own fee in person on delivery.
  */
-export function quoteShipping(region: string): DeliveryInfo {
+export function getDeliveryInfo(region: string): DeliveryInfo {
   const zone = zoneForRegion(region);
   const rate = SHIPPING_ZONES[zone];
 

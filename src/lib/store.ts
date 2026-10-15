@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MAX_QUANTITY_PER_LINE } from './order-limits';
+import type { CartLineCheck } from './catalogue';
 
 export interface CartItem {
   id: string;
@@ -19,15 +20,6 @@ export interface CartAdjustment {
   newPrice?: number;
   oldQuantity?: number;
   newQuantity?: number;
-}
-
-interface CartLineCheck {
-  product_id: number;
-  name: string;
-  price: number;
-  available: number;
-  requested: number;
-  isAvailable: boolean;
 }
 
 /** A coupon the customer has applied for display. The server re-resolves the code

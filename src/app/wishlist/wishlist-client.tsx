@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/product-card';
 import { useWishlistStore } from '@/lib/store';
 import { useMounted } from '@/lib/use-mounted';
-import type { CatalogueProduct } from '@/lib/server/catalogue';
+import type { CatalogueProduct } from '@/lib/catalogue';
 
 export default function WishlistClient({ products }: { products: CatalogueProduct[] }) {
   const items = useWishlistStore((s) => s.items);
